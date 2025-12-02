@@ -10,25 +10,25 @@
     body {
       margin: 0;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #020617;
-      color: #e5e7eb;
+      background: #f3f4f6;
+      color: #111827;
     }
 
     header {
-      padding: 0.9rem 1.5rem;
-      background: #020617;
-      border-bottom: 1px solid #1f2937;
+      padding: 0.8rem 1.5rem;
+      background: #111827;
+      color: #f9fafb;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      box-shadow: 0 2px 6px rgba(15,23,42,0.35);
     }
 
     header h1 {
       margin: 0;
-      font-size: 1.2rem;
-      letter-spacing: 0.08em;
-      font-weight: 600;
-      color: #f9fafb;
+      font-size: 1.1rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
     }
 
     main {
@@ -42,20 +42,20 @@
       gap: 1rem;
       margin-top: 1rem;
       overflow-x: auto;
-      padding-bottom: 0.5rem;
+      padding-bottom: 1rem;
     }
 
     .column {
-      background: #020617;
+      background: #e5e7eb;
       border-radius: 0.9rem;
-      border: 1px solid #1f2937;
+      border: 1px solid #d1d5db;
       padding: 0.7rem;
       display: flex;
       flex-direction: column;
-      max-height: calc(100vh - 190px);
-      min-width: 270px;
+      max-height: calc(100vh - 210px);
+      min-width: 260px;
       flex: 0 0 auto;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.45);
+      box-shadow: 0 6px 14px rgba(15,23,42,0.12);
     }
 
     .column-header {
@@ -70,21 +70,23 @@
       font-weight: 600;
       font-size: 0.95rem;
       cursor: pointer;
-      padding: 0.1rem 0.35rem;
+      padding: 0.15rem 0.4rem;
       border-radius: 999px;
-      background: rgba(15,23,42,0.8);
-      color: #e5e7eb;
+      background: #ffffff;
+      color: #111827;
+      border: 1px solid #d1d5db;
     }
 
-    .column-title:hover { background: rgba(15,23,42,1); }
+    .column-title:hover {
+      background: #f9fafb;
+    }
 
     .column-count {
-      background: #0f172a;
-      color: #9ca3af;
+      background: #111827;
+      color: #f9fafb;
       border-radius: 999px;
       padding: 0 0.55rem;
       font-size: 0.75rem;
-      border: 1px solid #1f2937;
     }
 
     .column-actions {
@@ -101,19 +103,19 @@
       line-height: 1;
       opacity: 0.6;
       padding: 0.1rem;
-      color: #9ca3af;
+      color: #4b5563;
     }
 
     .icon-btn:hover {
       opacity: 1;
-      color: #e5e7eb;
+      color: #111827;
     }
 
     .color-trigger {
       width: 18px;
       height: 18px;
       border-radius: 999px;
-      border: 1px solid #1f2937;
+      border: 1px solid #9ca3af;
       background: #22c55e;
       padding: 0;
       cursor: pointer;
@@ -132,17 +134,17 @@
     }
 
     .subcategory {
-      background: #020617;
+      background: #d1d5db;
       border-radius: 0.7rem;
       padding: 0.25rem 0.3rem 0.35rem;
       margin-bottom: 0.45rem;
-      border: 1px solid #111827;
+      border: 1px solid #cbd5e1;
     }
 
     .subcategory--none {
       background: transparent;
       border-style: dashed;
-      border-color: #1f2937;
+      border-color: #cbd5e1;
     }
 
     .subcategory-header {
@@ -159,19 +161,21 @@
       cursor: pointer;
       padding: 0.05rem 0.35rem;
       border-radius: 999px;
-      background: #0b1120;
-      color: #cbd5f5;
+      background: #f9fafb;
+      color: #111827;
+      border: 1px solid #d1d5db;
     }
 
-    .subcategory-title:hover { background: #111827; }
+    .subcategory-title:hover {
+      background: #ffffff;
+    }
 
     .subcategory-count {
       font-size: 0.7rem;
-      background: #0f172a;
-      color: #9ca3af;
+      background: #9ca3af;
+      color: #f9fafb;
       border-radius: 999px;
       padding: 0 0.45rem;
-      border: 1px solid #1f2937;
     }
 
     .subcategory-body {
@@ -182,47 +186,46 @@
     }
 
     .subcategory-body--hover {
-      background: rgba(15,23,42,0.8);
-      outline: 1px dashed #4b5563;
+      background: #e5e7eb;
+      outline: 2px dashed #9ca3af;
       outline-offset: -2px;
     }
 
     .card {
       position: relative;
-      background: #020617;
+      background: #ffffff;
       border-radius: 0.7rem;
       padding: 0.5rem 0.6rem;
       margin-bottom: 0.5rem;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+      box-shadow: 0 2px 6px rgba(15,23,42,0.12);
       cursor: grab;
-      border: 1px solid #111827;
+      border: 1px solid #e5e7eb;
       transition: transform 0.1s ease, box-shadow 0.1s ease, border-color 0.1s ease, background 0.1s ease;
     }
 
     .card:active {
       cursor: grabbing;
       transform: scale(1.02);
-      box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+      box-shadow: 0 6px 18px rgba(15,23,42,0.18);
     }
 
-    /* Indicateur de position de drop (haut/bas) */
     .card--drag-over-top {
-      border-top: 2px solid #22c55e;
+      border-top: 2px solid #16a34a;
     }
     .card--drag-over-bottom {
-      border-bottom: 2px solid #22c55e;
+      border-bottom: 2px solid #16a34a;
     }
 
     .card-title {
       font-weight: 600;
       font-size: 0.9rem;
       margin-bottom: 0.2rem;
-      color: #e5e7eb;
+      color: #111827;
     }
 
     .card-desc {
       font-size: 0.8rem;
-      color: #9ca3af;
+      color: #4b5563;
       margin-bottom: 0.25rem;
     }
 
@@ -237,11 +240,11 @@
 
     .tag {
       font-size: 0.7rem;
-      background: rgba(34,197,94,0.12);
-      color: #4ade80;
+      background: #e0f2fe;
+      color: #1d4ed8;
       border-radius: 999px;
       padding: 0.05rem 0.5rem;
-      border: 1px solid rgba(34,197,94,0.2);
+      border: 1px solid #bfdbfe;
     }
 
     .top-bar {
@@ -257,11 +260,11 @@
       flex-wrap: wrap;
       gap: 0.4rem;
       align-items: center;
-      background: #020617;
+      background: #e5e7eb;
       border-radius: 999px;
       padding: 0.4rem 0.6rem;
-      border: 1px solid #1f2937;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      border: 1px solid #d1d5db;
+      box-shadow: 0 2px 6px rgba(15,23,42,0.12);
     }
 
     .form-inline input,
@@ -271,12 +274,14 @@
       padding: 0.25rem 0.5rem;
       border-radius: 999px;
       outline: none;
-      background: #020617;
-      color: #e5e7eb;
-      border: 1px solid #111827;
+      background: #ffffff;
+      color: #111827;
+      border: 1px solid #d1d5db;
     }
 
-    .form-inline input::placeholder { color: #6b7280; }
+    .form-inline input::placeholder {
+      color: #9ca3af;
+    }
 
     .btn {
       border: none;
@@ -285,12 +290,12 @@
       font-size: 0.8rem;
       font-weight: 500;
       cursor: pointer;
-      background: #22c55e;
-      color: #022c22;
+      background: #111827;
+      color: #f9fafb;
       transition: background 0.15s ease, transform 0.05s ease, box-shadow 0.05s ease;
-      box-shadow: 0 2px 10px rgba(34,197,94,0.35);
+      box-shadow: 0 1px 4px rgba(15,23,42,0.25);
     }
-    .btn:hover { background: #16a34a; }
+    .btn:hover { background: #030712; }
     .btn:active { transform: translateY(1px); box-shadow: 0 0 0 rgba(0,0,0,0.2); }
 
     .badge-live {
@@ -315,12 +320,12 @@
 
     .status {
       font-size: 0.75rem;
-      opacity: 0.7;
+      opacity: 0.9;
       text-align: right;
       margin-top: 0.2rem;
     }
-    .status.ok { color: #22c55e; }
-    .status.err { color: #ef4444; }
+    .status.ok { color: #bbf7d0; }
+    .status.err { color: #fecaca; }
 
     footer {
       font-size: 0.7rem;
@@ -329,14 +334,14 @@
       color: #6b7280;
     }
 
-    /* MENU DE COULEUR (style Miro) */
+    /* MENU DE COULEUR (style palette) */
     .color-menu {
       position: fixed;
-      background: #020617;
+      background: #ffffff;
       border-radius: 0.75rem;
-      border: 1px solid #1f2937;
+      border: 1px solid #d1d5db;
       padding: 0.6rem;
-      box-shadow: 0 16px 40px rgba(0,0,0,0.6);
+      box-shadow: 0 12px 30px rgba(15,23,42,0.25);
       z-index: 9999;
       width: 190px;
     }
@@ -345,7 +350,7 @@
 
     .color-menu-title {
       font-size: 0.75rem;
-      color: #9ca3af;
+      color: #6b7280;
       margin-bottom: 0.35rem;
     }
 
@@ -359,7 +364,7 @@
       width: 22px;
       height: 22px;
       border-radius: 999px;
-      border: 1px solid rgba(15,23,42,0.6);
+      border: 1px solid rgba(148,163,184,0.7);
       cursor: pointer;
       outline: none;
       padding: 0;
@@ -367,7 +372,7 @@
 
     .color-swatch:hover {
       transform: scale(1.06);
-      box-shadow: 0 0 0 2px rgba(148,163,184,0.45);
+      box-shadow: 0 0 0 2px rgba(59,130,246,0.35);
     }
 
     @media (max-width: 768px) {
@@ -378,7 +383,7 @@
 </head>
 <body>
 <header>
-  <h1>INTRANET • KANBAN</h1>
+  <h1>Dispatch SAMS</h1>
   <div>
     <div class="badge-live">
       <span class="badge-live-dot"></span> Temps réel
@@ -465,8 +470,6 @@
 
   let colorMenuCallback = null;
 
-  /* ===== UTILITAIRES ===== */
-
   function setStatus(msg, ok = true) {
     statusText.textContent = msg;
     statusText.classList.toggle("ok", ok);
@@ -525,7 +528,7 @@
 
   taskColumnSelect.addEventListener("change", updateTaskSubSelect);
 
-  /* === MENU COULEUR (type Miro) === */
+  // --- menu couleur ---
 
   COLOR_PALETTE.forEach(color => {
     const btn = document.createElement("button");
@@ -559,23 +562,27 @@
 
   function applyCardColor(card, color) {
     if (!color) {
-      card.style.background = "#020617";
-      card.style.borderColor = "#111827";
-      card.style.boxShadow = "0 4px 14px rgba(0,0,0,0.5)";
+      card.style.background = "#ffffff";
+      card.style.borderColor = "#e5e7eb";
+      card.style.boxShadow = "0 2px 6px rgba(15,23,42,0.12)";
+      card.style.color = "#111827";
+      card.querySelectorAll(".card-title").forEach(el => el.style.color = "#111827");
+      card.querySelectorAll(".card-desc").forEach(el => el.style.color = "#4b5563");
+      card.querySelectorAll(".card-meta").forEach(el => el.style.color = "#6b7280");
       return;
     }
 
     card.style.background = color;
     card.style.borderColor = color;
-    card.style.boxShadow = `0 4px 18px ${color}55`;
+    card.style.boxShadow = `0 4px 12px ${color}44`;
 
     const r = parseInt(color.substr(1,2),16);
     const g = parseInt(color.substr(3,2),16);
     const b = parseInt(color.substr(5,2),16);
     const luminance = 0.299*r + 0.587*g + 0.114*b;
 
-    const textColor = luminance < 140 ? "#f9fafb" : "#020617";
-    const secondary = luminance < 140 ? "#e5e7eb" : "#111827";
+    const textColor = luminance < 140 ? "#f9fafb" : "#111827";
+    const secondary = luminance < 140 ? "#e5e7eb" : "#374151";
 
     card.style.color = textColor;
     card.querySelectorAll(".card-title").forEach(el => el.style.color = textColor);
@@ -583,7 +590,7 @@
     card.querySelectorAll(".card-meta").forEach(el => el.style.color = secondary);
   }
 
-  /* ===== CREATION CARTE AVEC DROP AU-DESSUS/DESSOUS ===== */
+  // --- création carte avec drop précis ---
 
   function createCard(id, data, label, columnId, subId) {
     const card = document.createElement("div");
@@ -644,12 +651,10 @@
 
     applyCardColor(card, data.color);
 
-    // drag start
     card.addEventListener("dragstart", (e) => {
       e.dataTransfer.setData("text/plain", id);
     });
 
-    // drag over : choisir au-dessus / en-dessous
     card.addEventListener("dragover", (e) => {
       e.preventDefault();
       const rect = card.getBoundingClientRect();
@@ -665,7 +670,6 @@
       delete card.dataset.dropPosition;
     });
 
-    // drop sur la carte => réordonnancement précis
     card.addEventListener("drop", async (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -679,7 +683,6 @@
       const draggedTask = tasks.find(t => t.id === draggedId);
       if (!draggedTask) return;
 
-      // tâches du groupe destination (colonne + sous-catégorie)
       let destTasks = tasks
         .filter(t => t.columnId === destColumnId && (t.subcategoryId || null) === destSubId && t.id !== draggedId)
         .sort((a,b) => (a.order || 0) - (b.order || 0));
@@ -712,7 +715,6 @@
       }
     });
 
-    // double-clic -> supprimer carte
     card.addEventListener("dblclick", async () => {
       if (confirm("Supprimer cette carte ?")) {
         try {
@@ -726,8 +728,6 @@
 
     return card;
   }
-
-  /* ===== SUPPRESSIONS COLONNES / SOUS-CAT ===== */
 
   async function deleteColumnAndTasks(columnId, columnName) {
     const ok = confirm(`Supprimer la catégorie "${columnName}" et toutes ses cartes ?`);
@@ -774,8 +774,6 @@
     }
   }
 
-  /* ===== RENDU DU BOARD ===== */
-
   function renderBoard() {
     board.innerHTML = "";
 
@@ -785,10 +783,9 @@
 
       if (column.color) {
         colArticle.style.borderColor = column.color;
-        colArticle.style.boxShadow = `0 10px 30px ${column.color}33`;
+        colArticle.style.boxShadow = `0 6px 18px ${column.color}33`;
       }
 
-      // HEADER
       const header = document.createElement("div");
       header.className = "column-header";
 
@@ -801,7 +798,6 @@
       titleSpan.className = "column-title";
       titleSpan.textContent = column.name;
 
-      // Renommage colonne
       titleSpan.addEventListener("dblclick", () => {
         const input = document.createElement("input");
         input.type = "text";
@@ -809,7 +805,7 @@
         input.style.fontSize = "0.9rem";
         input.style.padding = "0.1rem 0.3rem";
         input.style.borderRadius = "0.5rem";
-        input.style.border = "1px solid #4b5563";
+        input.style.border = "1px solid #9ca3af";
         input.style.outline = "none";
         headerLeft.replaceChild(input, titleSpan);
         input.focus();
@@ -860,7 +856,6 @@
         });
       });
 
-      // bouton ajout sous-catégorie
       const addSubBtn = document.createElement("button");
       addSubBtn.className = "icon-btn";
       addSubBtn.title = "Ajouter une sous-catégorie";
@@ -900,7 +895,6 @@
       header.appendChild(headerLeft);
       header.appendChild(headerActions);
 
-      // BODY
       const body = document.createElement("div");
       body.className = "column-body";
 
@@ -911,7 +905,7 @@
         .filter(s => s.columnId === column.id)
         .sort((a, b) => (a.order || 0) - (b.order || 0));
 
-      // bloc "Sans sous-catégorie"
+      // Sans sous-catégorie
       const noSubTasks = tasksForColumn.filter(t => !t.subcategoryId);
       const noSubBlock = document.createElement("div");
       noSubBlock.className = "subcategory subcategory--none";
@@ -976,14 +970,14 @@
       noSubBlock.appendChild(noSubBody);
       body.appendChild(noSubBlock);
 
-      // sous-catégories
+      // Sous-catégories
       subsForCol.forEach(sub => {
         const subBlock = document.createElement("div");
         subBlock.className = "subcategory";
 
         if (sub.color) {
           subBlock.style.borderColor = sub.color;
-          subBlock.style.boxShadow = `0 4px 16px ${sub.color}33`;
+          subBlock.style.boxShadow = `0 4px 10px ${sub.color}33`;
         }
 
         const subHeader = document.createElement("div");
@@ -998,7 +992,6 @@
         subTitle.className = "subcategory-title";
         subTitle.textContent = sub.name;
 
-        // renommage sous-catégorie
         subTitle.addEventListener("dblclick", () => {
           const input = document.createElement("input");
           input.type = "text";
@@ -1006,7 +999,7 @@
           input.style.fontSize = "0.8rem";
           input.style.padding = "0.05rem 0.3rem";
           input.style.borderRadius = "0.4rem";
-          input.style.border = "1px solid #4b5563";
+          input.style.border = "1px solid #9ca3af";
           input.style.outline = "none";
           subHeaderLeft.replaceChild(input, subTitle);
           input.focus();
@@ -1145,7 +1138,6 @@
     await batch.commit();
   }
 
-  // LISTENERS FIRESTORE
   db.collection("columns")
     .orderBy("order", "asc")
     .onSnapshot(async (snapshot) => {
@@ -1194,7 +1186,6 @@
       setStatus("Erreur de connexion aux tâches", false);
     });
 
-  // FORM AJOUT CARTE
   addTaskForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const title = taskTitleInput.value.trim();
@@ -1226,7 +1217,6 @@
     }
   });
 
-  // FORM AJOUT COLONNE
   addColumnForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const name = columnNameInput.value.trim();
