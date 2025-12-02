@@ -4,125 +4,305 @@
   <meta charset="UTF-8" />
   <title>Kanban Temps Réel</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
   <style>
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: #f3f4f6;
-      font-family: system-ui, sans-serif;
       color: #111827;
     }
 
     header {
+      padding: 1rem 2rem;
       background: #111827;
       color: white;
-      padding: 1rem 2rem;
-      display: flex; justify-content: space-between; align-items: center;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
+    header h1 {
+      margin: 0;
+      font-size: 1.4rem;
+    }
+
+    main {
+      padding: 1rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* Board horizontal */
     .board {
       display: flex;
       gap: 1rem;
+      margin-top: 1rem;
       overflow-x: auto;
-      padding: 1rem;
+      padding-bottom: 0.5rem;
     }
 
     .column {
       background: #e5e7eb;
-      padding: 0.75rem;
       border-radius: 0.75rem;
-      min-width: 280px;
-      flex: 0 0 auto;
+      padding: 0.75rem;
       display: flex;
       flex-direction: column;
+      max-height: calc(100vh - 180px);
+      min-width: 260px;
+      flex: 0 0 auto;
     }
 
     .column-header {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: .5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+      gap: 0.35rem;
     }
 
-    .column-title { font-weight: 600; cursor: pointer; }
-    .column-title:hover { opacity: .7; }
-
-    .column-actions button {
-      background: transparent; border: none; cursor: pointer;
-      font-size: 1rem; opacity: .6;
+    .column-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      padding: 0.1rem 0.3rem;
+      border-radius: 0.5rem;
     }
-    .column-actions button:hover { opacity: 1; }
 
+    .column-title:hover {
+      background: rgba(0,0,0,0.05);
+    }
+
+    .column-count {
+      background: #111827;
+      color: white;
+      border-radius: 999px;
+      padding: 0 0.5rem;
+      font-size: 0.75rem;
+    }
+
+    .column-actions {
+      display: flex;
+      gap: 0.15rem;
+      align-items: center;
+    }
+
+    .icon-btn {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 0.9rem;
+      line-height: 1;
+      opacity: 0.6;
+      padding: 0.1rem;
+    }
+
+    .icon-btn:hover {
+      opacity: 1;
+    }
+
+    .column-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.25rem;
+      border-radius: 0.5rem;
+    }
+
+    /* bloc sous-catégorie */
     .subcategory {
       background: #d1d5db;
-      padding: .4rem;
-      border-radius: .5rem;
-      margin-bottom: .5rem;
+      border-radius: 0.6rem;
+      padding: 0.3rem;
+      margin-bottom: 0.4rem;
     }
 
     .subcategory--none {
-      background: #cbd5e1;
+      background: transparent;
+      padding-top: 0;
     }
 
-    .subcategory-title { font-size: .85rem; cursor: pointer; }
-    .subcategory-title:hover { opacity: .7; }
+    .subcategory-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.2rem;
+      gap: 0.25rem;
+    }
+
+    .subcategory-title {
+      font-weight: 500;
+      font-size: 0.8rem;
+      cursor: pointer;
+      padding: 0.05rem 0.3rem;
+      border-radius: 0.4rem;
+    }
+
+    .subcategory-title:hover {
+      background: rgba(0,0,0,0.06);
+    }
+
+    .subcategory-count {
+      font-size: 0.7rem;
+      background: #4b5563;
+      color: white;
+      border-radius: 999px;
+      padding: 0 0.45rem;
+    }
 
     .subcategory-body {
-      min-height: 20px;
-      border-radius: .4rem;
-      padding: .2rem;
+      border-radius: 0.4rem;
+      padding: 0.15rem;
+      min-height: 24px;
+      transition: background 0.15s ease, outline 0.15s ease;
     }
 
     .subcategory-body--hover {
-      outline: 2px dashed #444;
       background: #e5e7eb;
+      outline: 2px dashed #374151;
+      outline-offset: -2px;
     }
 
     .card {
       background: white;
-      padding: .5rem;
-      margin-bottom: .4rem;
-      border-radius: .6rem;
+      border-radius: 0.75rem;
+      padding: 0.5rem 0.6rem;
+      margin-bottom: 0.5rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
       cursor: grab;
-      box-shadow: 0 1px 2px rgba(0,0,0,.15);
+      transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.1s ease;
     }
 
     .card:active {
-      transform: scale(1.02);
-      box-shadow: 0 4px 10px rgba(0,0,0,.15);
       cursor: grabbing;
+      transform: scale(1.02);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    }
+
+    .card-title {
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 0.2rem;
+    }
+
+    .card-desc {
+      font-size: 0.8rem;
+      color: #4b5563;
+      margin-bottom: 0.25rem;
+    }
+
+    .card-meta {
+      font-size: 0.7rem;
+      color: #9ca3af;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .tag {
+      font-size: 0.7rem;
+      background: #eef2ff;
+      color: #3730a3;
+      border-radius: 999px;
+      padding: 0.05rem 0.4rem;
     }
 
     .top-bar {
-      display: flex; flex-wrap: wrap;
-      gap: .75rem;
-      padding: 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+      margin-bottom: 0.5rem;
     }
 
     .form-inline {
-      background: #e5e7eb; padding: .5rem .8rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      align-items: center;
+      background: #e5e7eb;
+      padding: 0.4rem 0.6rem;
       border-radius: 999px;
-      display: flex; gap: .4rem; align-items: center;
     }
 
-    input, select {
-      padding: .3rem .5rem; border: none; border-radius: 999px;
+    .form-inline input,
+    .form-inline select {
+      border: none;
+      font-size: 0.8rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 999px;
+      outline: none;
       background: white;
     }
 
     .btn {
-      padding: .35rem .8rem;
-      border-radius: 999px;
       border: none;
+      border-radius: 999px;
+      padding: 0.35rem 0.8rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
       background: #111827;
       color: white;
-      cursor: pointer;
+      transition: background 0.15s ease, transform 0.05s ease, box-shadow 0.05s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+      box-shadow: 0 0 0 rgba(0,0,0,0.2);
+    }
+
+    .badge-live {
+      font-size: 0.7rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.1);
+      color: #a7f3d0;
+    }
+
+    .badge-live-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #34d399;
+      box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.35);
+    }
+
+    .status {
+      font-size: 0.75rem;
+      opacity: 0.7;
+    }
+
+    .status.ok {
+      color: #10b981;
+    }
+
+    .status.err {
+      color: #ef4444;
+    }
+
+    footer {
+      font-size: 0.7rem;
+      text-align: center;
+      padding: 0.5rem;
+      color: #6b7280;
+    }
+
+    @media (max-width: 768px) {
+      .board {
+        flex-direction: row;
+      }
     }
   </style>
 </head>
 
 <body>
 <header>
-  <h1>Kanban Temps Réel</h1>
+  <h1>Dispatch SAMS</h1>
   <div id="statusText">Connecté</div>
 </header>
 
@@ -148,7 +328,7 @@
 <section id="board" class="board"></section>
 
 <footer style="text-align:center; padding:1rem; color:#777">
-  Hébergé sur GitHub Pages
+  attention à tenir votre dispatch à jours
 </footer>
 
 <!-- Firebase -->
