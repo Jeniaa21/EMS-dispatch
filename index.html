@@ -429,19 +429,9 @@
       box-shadow: 0 0 0 2px rgba(59,130,246,0.35);
     }
 
-    /* Dev mode: tout ce qui est .dev-only est désactivé quand le mode dev est OFF */
-    .dev-only {
-      transition: opacity 0.15s ease;
-    }
-
+    /* Dev mode : cacher complètement les éléments d'édition quand OFF */
     body:not(.dev-mode-on) .dev-only {
-      opacity: 0.3;
-      pointer-events: none;
-    }
-
-    body.dev-mode-on .dev-only {
-      opacity: 1;
-      pointer-events: auto;
+      display: none !important;
     }
 
     @media (max-width: 768px) {
@@ -549,8 +539,6 @@
   function setDevMode(enabled) {
     devMode = enabled;
     document.body.classList.toggle("dev-mode-on", enabled);
-    // Optionnel : tu peux stocker dans le localStorage si tu veux garder l'état
-    // localStorage.setItem("devMode", enabled ? "1" : "0");
   }
 
   devToggle.addEventListener("change", () => {
@@ -630,7 +618,7 @@
   });
 
   function openColorMenu(x, y, title, callback) {
-    if (!devMode) return; // sécurité
+    if (!devMode) return;
     colorMenuTitle.textContent = title || "Couleur";
     colorMenuCallback = callback;
     colorMenu.style.left = x + "px";
@@ -727,7 +715,6 @@
     tag.className = "tag";
     tag.textContent = data.badgeLabel || label || "Sans libellé";
 
-    // clic = changer couleur du badge (mode dev uniquement)
     tag.addEventListener("click", (e) => {
       if (!devMode) return;
       e.stopPropagation();
@@ -742,7 +729,6 @@
       });
     });
 
-    // double-clic = renommer le badge (mode dev uniquement)
     tag.addEventListener("dblclick", async (e) => {
       if (!devMode) return;
       e.stopPropagation();
@@ -804,19 +790,19 @@
       const offsetY = e.clientY - rect.top;
       const position = offsetY < rect.height / 2 ? "before" : "after";
       card.dataset.dropPosition = position;
-      card.classList.toggle("card--drag-over-top", position === "before");
-      card.classList.toggle("card--drag-over-bottom", position === "after");
+      card.classList.toggle("card--drag_over_top", position === "before");
+      card.classList.toggle("card--drag_over_bottom", position === "after");
     });
 
     card.addEventListener("dragleave", () => {
-      card.classList.remove("card--drag-over-top", "card--drag-over-bottom");
+      card.classList.remove("card--drag_over_top", "card--drag_over_bottom");
       delete card.dataset.dropPosition;
     });
 
     card.addEventListener("drop", async (e) => {
       e.preventDefault();
       e.stopPropagation();
-      card.classList.remove("card--drag-over-top", "card--drag-over-bottom");
+      card.classList.remove("card--drag_over_top", "card--drag_over_bottom");
 
       const draggedId = e.dataTransfer.getData("text/plain");
       if (!draggedId || draggedId === id) return;
