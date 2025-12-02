@@ -34,11 +34,13 @@
       margin: 0 auto;
     }
 
+    /* Board dynamique avec scroll horizontal si beaucoup de colonnes */
     .board {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      display: flex;
       gap: 1rem;
       margin-top: 1rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
     }
 
     .column {
@@ -48,6 +50,8 @@
       display: flex;
       flex-direction: column;
       max-height: calc(100vh - 180px);
+      min-width: 260px;
+      flex: 0 0 auto;
     }
 
     .column-header {
@@ -55,11 +59,19 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 0.5rem;
+      gap: 0.35rem;
     }
 
     .column-title {
       font-weight: 600;
       font-size: 0.95rem;
+      cursor: pointer;
+      padding: 0.1rem 0.3rem;
+      border-radius: 0.5rem;
+    }
+
+    .column-title:hover {
+      background: rgba(0,0,0,0.05);
     }
 
     .column-count {
@@ -68,6 +80,26 @@
       border-radius: 999px;
       padding: 0 0.5rem;
       font-size: 0.75rem;
+    }
+
+    .column-actions {
+      display: flex;
+      gap: 0.15rem;
+      align-items: center;
+    }
+
+    .icon-btn {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 0.9rem;
+      line-height: 1;
+      opacity: 0.6;
+      padding: 0.1rem;
+    }
+
+    .icon-btn:hover {
+      opacity: 1;
     }
 
     .column-body {
@@ -133,6 +165,7 @@
       flex-wrap: wrap;
       gap: 0.75rem;
       align-items: center;
+      margin-bottom: 0.5rem;
     }
 
     .form-inline {
@@ -214,7 +247,7 @@
 
     @media (max-width: 768px) {
       .board {
-        grid-template-columns: 1fr;
+        flex-direction: row;
       }
     }
   </style>
@@ -233,43 +266,23 @@
 
 <main>
   <div class="top-bar">
+    <!-- Formulaire ajout de tâche -->
     <form id="addTaskForm" class="form-inline">
       <input type="text" id="taskTitle" placeholder="Titre" required />
       <input type="text" id="taskDesc" placeholder="Description (optionnel)" />
-      <select id="taskColumn">
-        <option value="todo">À faire</option>
-        <option value="doing">En cours</option>
-        <option value="done">Terminé</option>
-      </select>
-      <button type="submit" class="btn">+ Ajouter</button>
+      <select id="taskColumn"></select>
+      <button type="submit" class="btn">+ Ajouter une carte</button>
+    </form>
+
+    <!-- Formulaire ajout de catégorie -->
+    <form id="addColumnForm" class="form-inline">
+      <input type="text" id="columnName" placeholder="Nouvelle catégorie" required />
+      <button type="submit" class="btn">+ Ajouter une catégorie</button>
     </form>
   </div>
 
-  <section class="board">
-    <article class="column">
-      <div class="column-header">
-        <span class="column-title">À faire</span>
-        <span class="column-count" id="count-todo">0</span>
-      </div>
-      <div class="column-body" data-status="todo"></div>
-    </article>
-
-    <article class="column">
-      <div class="column-header">
-        <span class="column-title">En cours</span>
-        <span class="column-count" id="count-doing">0</span>
-      </div>
-      <div class="column-body" data-status="doing"></div>
-    </article>
-
-    <article class="column">
-      <div class="column-header">
-        <span class="column-title">Terminé</span>
-        <span class="column-count" id="count-done">0</span>
-      </div>
-      <div class="column-body" data-status="done"></div>
-    </article>
-  </section>
+  <!-- Colonnes générées dynamiquement -->
+  <section id="board" class="board"></section>
 </main>
 
 <footer>
@@ -281,7 +294,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
 <script>
-  // 🔧 1) COLLE ICI TON firebaseConfig
+  // 🔧 CONFIG FIREBASE (tu as déjà ces valeurs)
   const firebaseConfig = {
     apiKey: "AIzaSyBsHFp5MfmldTvcDkatE4P9gXNRZ1Ivk0o",
     authDomain: "ems-dispatch-d1cd2.firebaseapp.com",
@@ -298,16 +311,16 @@
 
   const statusText = document.getElementById("statusText");
   const addTaskForm = document.getElementById("addTaskForm");
+  const addColumnForm = document.getElementById("addColumnForm");
   const taskTitleInput = document.getElementById("taskTitle");
   const taskDescInput = document.getElementById("taskDesc");
   const taskColumnSelect = document.getElementById("taskColumn");
+  const columnNameInput = document.getElementById("columnName");
+  const board = document.getElementById("board");
 
-  const columnBodies = document.querySelectorAll(".column-body");
-  const counts = {
-    todo: document.getElementById("count-todo"),
-    doing: document.getElementById("count-doing"),
-    done: document.getElementById("count-done")
-  };
+  let columns = [];  // {id, name, order, createdAt}
+  let tasks = [];    // {id, title, description, columnId, createdAt}
+  let hasInitializedColumns = false;
 
   function setStatus(msg, ok = true) {
     statusText.textContent = msg;
@@ -326,12 +339,21 @@
     });
   }
 
-  function createCard(id, data) {
+  function updateTaskColumnSelect() {
+    taskColumnSelect.innerHTML = "";
+    columns.forEach(col => {
+      const opt = document.createElement("option");
+      opt.value = col.id;
+      opt.textContent = col.name;
+      taskColumnSelect.appendChild(opt);
+    });
+  }
+
+  function createCard(id, data, columnName) {
     const card = document.createElement("div");
     card.className = "card";
     card.draggable = true;
     card.dataset.id = id;
-    card.dataset.status = data.status;
 
     const title = document.createElement("div");
     title.className = "card-title";
@@ -346,9 +368,7 @@
 
     const tag = document.createElement("span");
     tag.className = "tag";
-    tag.textContent = data.status === "todo" ? "À faire" :
-                      data.status === "doing" ? "En cours" :
-                      "Terminé";
+    tag.textContent = columnName || "Sans catégorie";
 
     const date = document.createElement("span");
     date.textContent = formatDate(data.createdAt);
@@ -365,7 +385,7 @@
       e.dataTransfer.setData("text/plain", id);
     });
 
-    // Double-clic : suppression
+    // Double-clic : suppression de la carte
     card.addEventListener("dblclick", async () => {
       if (confirm("Supprimer cette carte ?")) {
         try {
@@ -380,57 +400,215 @@
     return card;
   }
 
-  function renderSnapshot(snapshot) {
-    // Réinitialiser les colonnes
-    const lists = { todo: [], doing: [], done: [] };
+  async function deleteColumnAndTasks(columnId, columnName) {
+    const ok = confirm(`Supprimer la catégorie "${columnName}" et toutes ses cartes ?`);
+    if (!ok) return;
 
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      const status = data.status || "todo";
-      if (!lists[status]) lists[status] = [];
-      lists[status].push({ id: doc.id, data });
-    });
-
-    Object.keys(lists).forEach(status => {
-      const colEl = document.querySelector('.column-body[data-status="' + status + '"]');
-      if (!colEl) return;
-      colEl.innerHTML = "";
-      lists[status].forEach(item => {
-        const card = createCard(item.id, item.data);
-        colEl.appendChild(card);
-      });
-      counts[status].textContent = lists[status].length;
-    });
+    try {
+      setStatus("Suppression de la catégorie...", true);
+      const snap = await db.collection("tasks").where("columnId", "==", columnId).get();
+      const batch = db.batch();
+      snap.forEach(doc => batch.delete(doc.ref));
+      const colRef = db.collection("columns").doc(columnId);
+      batch.delete(colRef);
+      await batch.commit();
+      setStatus("Connecté", true);
+    } catch (err) {
+      console.error(err);
+      setStatus("Erreur lors de la suppression de la catégorie", false);
+      alert("Erreur lors de la suppression de la catégorie.");
+    }
   }
 
-  // 🔄 Écoute temps réel Firestore
+  function renderBoard() {
+    board.innerHTML = "";
+
+    columns.forEach(column => {
+      const colArticle = document.createElement("article");
+      colArticle.className = "column";
+
+      // HEADER
+      const header = document.createElement("div");
+      header.className = "column-header";
+
+      const headerLeft = document.createElement("div");
+      headerLeft.style.display = "flex";
+      headerLeft.style.alignItems = "center";
+      headerLeft.style.gap = "0.35rem";
+
+      const titleSpan = document.createElement("span");
+      titleSpan.className = "column-title";
+      titleSpan.textContent = column.name;
+
+      // Renommage sur double-clic
+      titleSpan.addEventListener("dblclick", () => {
+        const input = document.createElement("input");
+        input.type = "text";
+        input.value = column.name;
+        input.style.fontSize = "0.9rem";
+        input.style.padding = "0.1rem 0.3rem";
+        input.style.borderRadius = "0.5rem";
+        input.style.border = "1px solid #9ca3af";
+        input.style.outline = "none";
+        headerLeft.replaceChild(input, titleSpan);
+        input.focus();
+        input.select();
+
+        const finish = async (save) => {
+          const newName = input.value.trim();
+          headerLeft.replaceChild(titleSpan, input);
+          if (save && newName && newName !== column.name) {
+            try {
+              await db.collection("columns").doc(column.id).update({ name: newName });
+            } catch (err) {
+              console.error(err);
+              alert("Erreur lors du renommage de la catégorie.");
+            }
+          }
+        };
+
+        input.addEventListener("blur", () => finish(true));
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") finish(true);
+          if (e.key === "Escape") finish(false);
+        });
+      });
+
+      const countSpan = document.createElement("span");
+      countSpan.className = "column-count";
+
+      headerLeft.appendChild(titleSpan);
+      headerLeft.appendChild(countSpan);
+
+      const headerActions = document.createElement("div");
+      headerActions.className = "column-actions";
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.className = "icon-btn";
+      deleteBtn.title = "Supprimer la catégorie";
+      deleteBtn.textContent = "🗑";
+      deleteBtn.addEventListener("click", () => {
+        deleteColumnAndTasks(column.id, column.name);
+      });
+
+      headerActions.appendChild(deleteBtn);
+
+      header.appendChild(headerLeft);
+      header.appendChild(headerActions);
+
+      // BODY
+      const body = document.createElement("div");
+      body.className = "column-body";
+      body.dataset.columnId = column.id;
+
+      // Tâches de cette colonne
+      const tasksForColumn = tasks.filter(t => t.columnId === column.id);
+      countSpan.textContent = tasksForColumn.length;
+
+      tasksForColumn.forEach(item => {
+        const card = createCard(item.id, item, column.name);
+        body.appendChild(card);
+      });
+
+      // Drag & drop sur la colonne
+      body.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        body.classList.add("column-body--hover");
+      });
+
+      body.addEventListener("dragleave", () => {
+        body.classList.remove("column-body--hover");
+      });
+
+      body.addEventListener("drop", async (e) => {
+        e.preventDefault();
+        body.classList.remove("column-body--hover");
+        const id = e.dataTransfer.getData("text/plain");
+        if (!id) return;
+
+        try {
+          await db.collection("tasks").doc(id).update({ columnId: column.id });
+        } catch (err) {
+          console.error(err);
+          alert("Erreur lors du déplacement de la carte.");
+        }
+      });
+
+      colArticle.appendChild(header);
+      colArticle.appendChild(body);
+      board.appendChild(colArticle);
+    });
+
+    // Met à jour la liste déroulante des catégories pour les cartes
+    updateTaskColumnSelect();
+  }
+
+  async function createDefaultColumns() {
+    const names = ["À faire", "En cours", "Terminé"];
+    const batch = db.batch();
+    const colsRef = db.collection("columns");
+    names.forEach((name, index) => {
+      const ref = colsRef.doc();
+      batch.set(ref, {
+        name,
+        order: index,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    });
+    await batch.commit();
+  }
+
+  // 🔄 Écoute temps réel des colonnes
+  db.collection("columns")
+    .orderBy("order", "asc")
+    .onSnapshot(async (snapshot) => {
+      setStatus("Connecté");
+      if (!hasInitializedColumns && snapshot.empty) {
+        hasInitializedColumns = true;
+        // crée 3 colonnes par défaut si la collection est vide
+        await createDefaultColumns();
+        return;
+      }
+      hasInitializedColumns = true;
+      columns = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      renderBoard();
+    }, (error) => {
+      console.error(error);
+      setStatus("Erreur de connexion aux catégories", false);
+    });
+
+  // 🔄 Écoute temps réel des tâches
   db.collection("tasks")
     .orderBy("createdAt", "asc")
-    .onSnapshot(
-      (snapshot) => {
-        setStatus("Connecté");
-        renderSnapshot(snapshot);
-      },
-      (error) => {
-        console.error(error);
-        setStatus("Erreur de connexion Firestore", false);
-      }
-    );
+    .onSnapshot((snapshot) => {
+      setStatus("Connecté");
+      tasks = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      renderBoard();
+    }, (error) => {
+      console.error(error);
+      setStatus("Erreur de connexion aux tâches", false);
+    });
 
   // ➕ Ajout de carte
   addTaskForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const title = taskTitleInput.value.trim();
     const description = taskDescInput.value.trim();
-    const status = taskColumnSelect.value;
+    const columnId = taskColumnSelect.value;
 
-    if (!title) return;
+    if (!title || !columnId) return;
 
     try {
       await db.collection("tasks").add({
         title,
         description,
-        status,
+        columnId,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
       taskTitleInput.value = "";
@@ -441,32 +619,24 @@
     }
   });
 
-  // 🧲 Gestion des colonnes droppables
-  columnBodies.forEach(col => {
-    col.addEventListener("dragover", (e) => {
-      e.preventDefault();
-      col.classList.add("column-body--hover");
-    });
+  // ➕ Ajout de catégorie
+  addColumnForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const name = columnNameInput.value.trim();
+    if (!name) return;
 
-    col.addEventListener("dragleave", () => {
-      col.classList.remove("column-body--hover");
-    });
-
-    col.addEventListener("drop", async (e) => {
-      e.preventDefault();
-      col.classList.remove("column-body--hover");
-      const id = e.dataTransfer.getData("text/plain");
-      const newStatus = col.getAttribute("data-status");
-
-      if (!id || !newStatus) return;
-
-      try {
-        await db.collection("tasks").doc(id).update({ status: newStatus });
-      } catch (err) {
-        console.error(err);
-        alert("Erreur lors du déplacement de la carte.");
-      }
-    });
+    try {
+      const order = columns.length ? Math.max(...columns.map(c => c.order || 0)) + 1 : 0;
+      await db.collection("columns").add({
+        name,
+        order,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      columnNameInput.value = "";
+    } catch (err) {
+      console.error(err);
+      alert("Erreur lors de l'ajout de la catégorie.");
+    }
   });
 </script>
 </body>
