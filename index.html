@@ -527,123 +527,262 @@
   }
 
   function renderBoard() {
-    board.innerHTML = "";
+  board.innerHTML = "";
 
-    columns.forEach(column => {
-      const colArticle = document.createElement("article");
-      colArticle.className = "column";
+  columns.forEach(column => {
+    const colArticle = document.createElement("article");
+    colArticle.className = "column";
 
-      const header = document.createElement("div");
-      header.className = "column-header";
+    const header = document.createElement("div");
+    header.className = "column-header";
 
-      const headerLeft = document.createElement("div");
-      headerLeft.style.display = "flex";
-      headerLeft.style.alignItems = "center";
-      headerLeft.style.gap = "0.35rem";
+    const headerLeft = document.createElement("div");
+    headerLeft.style.display = "flex";
+    headerLeft.style.alignItems = "center";
+    headerLeft.style.gap = "0.35rem";
 
-      const titleSpan = document.createElement("span");
-      titleSpan.className = "column-title";
-      titleSpan.textContent = column.name;
+    const titleSpan = document.createElement("span");
+    titleSpan.className = "column-title";
+    titleSpan.textContent = column.name;
 
-      const countSpan = document.createElement("span");
-      countSpan.className = "column-count";
+    const countSpan = document.createElement("span");
+    countSpan.className = "column-count";
 
-      headerLeft.appendChild(titleSpan);
-      headerLeft.appendChild(countSpan);
+    headerLeft.appendChild(titleSpan);
+    headerLeft.appendChild(countSpan);
 
-      const headerActions = document.createElement("div");
-      headerActions.className = "column-actions";
+    const headerActions = document.createElement("div");
+    headerActions.className = "column-actions";
 
-      // bouton ajout sous-catégorie
-      const addSubBtn = document.createElement("button");
-      addSubBtn.className = "icon-btn";
-      addSubBtn.title = "Ajouter une sous-catégorie";
-      addSubBtn.textContent = "+";
-      addSubBtn.addEventListener("click", async () => {
-        const name = prompt("Nom de la nouvelle sous-catégorie :");
-        if (!name) return;
-        try {
-          const currentSubs = subcategories.filter(s => s.columnId === column.id);
-          const order = currentSubs.length
-            ? Math.max(...currentSubs.map(s => s.order || 0)) + 1
-            : 0;
-          await db.collection("subcategories").add({
-            columnId: column.id,
-            name: name.trim(),
-            order,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-          });
-        } catch (err) {
-          console.error(err);
-          alert("Erreur lors de l'ajout de la sous-catégorie.");
-        }
+    // bouton ajout sous-catégorie
+    const addSubBtn = document.createElement("button");
+    addSubBtn.className = "icon-btn";
+    addSubBtn.title = "Ajouter une sous-catégorie";
+    addSubBtn.textContent = "+";
+    addSubBtn.addEventListener("click", async () => {
+      const name = prompt("Nom de la nouvelle sous-catégorie :");
+      if (!name) return;
+      try {
+        const currentSubs = subcategories.filter(s => s.columnId === column.id);
+        const order = currentSubs.length
+          ? Math.max(...currentSubs.map(s => s.order || 0)) + 1
+          : 0;
+        await db.collection("subcategories").add({
+          columnId: column.id,
+          name: name.trim(),
+          order,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      } catch (err) {
+        console.error(err);
+        alert("Erreur lors de l'ajout de la sous-catégorie.");
+      }
+    });
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "icon-btn";
+    deleteBtn.title = "Supprimer la catégorie";
+    deleteBtn.textContent = "🗑";
+    deleteBtn.addEventListener("click", () => {
+      deleteColumnAndTasks(column.id, column.name);
+    });
+
+    headerActions.appendChild(addSubBtn);
+    headerActions.appendChild(deleteBtn);
+
+    header.appendChild(headerLeft);
+    header.appendChild(headerActions);
+
+    const body = document.createElement("div");
+    body.className = "column-body";
+
+    // tâches de cette colonne
+    const tasksForColumn = tasks.filter(t => t.columnId === column.id);
+    countSpan.textContent = tasksForColumn.length;
+
+    // sous-catégories pour cette colonne
+    const subsForCol = subcategories
+      .filter(s => s.columnId === column.id)
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+    // 👉 bloc "Sans sous-catégorie" TOUJOURS visible
+    const noSubTasks = tasksForColumn.filter(t => !t.subcategoryId);
+    const noSubBlock = document.createElement("div");
+    noSubBlock.className = "subcategory subcategory--none";
+
+    const nsHeader = document.createElement("div");
+    nsHeader.className = "subcategory-header";
+
+    const nsTitle = document.createElement("span");
+    nsTitle.className = "subcategory-title";
+    nsTitle.textContent = "Sans sous-catégorie";
+
+    const nsCount = document.createElement("span");
+    nsCount.className = "subcategory-count";
+    nsCount.textContent = noSubTasks.length;
+
+    nsHeader.appendChild(nsTitle);
+    nsHeader.appendChild(nsCount);
+
+    const noSubBody = document.createElement("div");
+    noSubBody.className = "subcategory-body";
+    noSubBody.dataset.columnId = column.id;
+    noSubBody.dataset.subId = "";
+
+    noSubTasks.forEach(item => {
+      const label = column.name;
+      const card = createCard(item.id, item, label);
+      noSubBody.appendChild(card);
+    });
+
+    // drag & drop sur bloc "sans sous-catégorie"
+    noSubBody.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      noSubBody.classList.add("subcategory-body--hover");
+    });
+    noSubBody.addEventListener("dragleave", () => {
+      noSubBody.classList.remove("subcategory-body--hover");
+    });
+    noSubBody.addEventListener("drop", async (e) => {
+      e.preventDefault();
+      noSubBody.classList.remove("subcategory-body--hover");
+      const id = e.dataTransfer.getData("text/plain");
+      if (!id) return;
+      try {
+        await db.collection("tasks").doc(id).update({
+          columnId: column.id,
+          subcategoryId: null
+        });
+      } catch (err) {
+        console.error(err);
+        alert("Erreur lors du déplacement de la carte.");
+      }
+    });
+
+    noSubBlock.appendChild(nsHeader);
+    noSubBlock.appendChild(noSubBody);
+    body.appendChild(noSubBlock);
+
+    // blocs pour chaque sous-catégorie
+    subsForCol.forEach(sub => {
+      const subBlock = document.createElement("div");
+      subBlock.className = "subcategory";
+
+      const subHeader = document.createElement("div");
+      subHeader.className = "subcategory-header";
+
+      const subHeaderLeft = document.createElement("div");
+      subHeaderLeft.style.display = "flex";
+      subHeaderLeft.style.alignItems = "center";
+      subHeaderLeft.style.gap = "0.25rem";
+
+      const subTitle = document.createElement("span");
+      subTitle.className = "subcategory-title";
+      subTitle.textContent = sub.name;
+
+      // renommage sous-catégorie
+      subTitle.addEventListener("dblclick", () => {
+        const input = document.createElement("input");
+        input.type = "text";
+        input.value = sub.name;
+        input.style.fontSize = "0.8rem";
+        input.style.padding = "0.05rem 0.3rem";
+        input.style.borderRadius = "0.4rem";
+        input.style.border = "1px solid #9ca3af";
+        input.style.outline = "none";
+        subHeaderLeft.replaceChild(input, subTitle);
+        input.focus();
+        input.select();
+
+        const finish = async (save) => {
+          const newName = input.value.trim();
+          subHeaderLeft.replaceChild(subTitle, input);
+          if (save && newName && newName !== sub.name) {
+            try {
+              await db.collection("subcategories").doc(sub.id).update({ name: newName });
+            } catch (err) {
+              console.error(err);
+              alert("Erreur lors du renommage de la sous-catégorie.");
+            }
+          }
+        };
+
+        input.addEventListener("blur", () => finish(true));
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") finish(true);
+          if (e.key === "Escape") finish(false);
+        });
       });
 
-      const deleteBtn = document.createElement("button");
-      deleteBtn.className = "icon-btn";
-      deleteBtn.title = "Supprimer la catégorie";
-      deleteBtn.textContent = "🗑";
-      deleteBtn.addEventListener("click", () => {
-        deleteColumnAndTasks(column.id, column.name);
+      const subCount = document.createElement("span");
+      subCount.className = "subcategory-count";
+
+      subHeaderLeft.appendChild(subTitle);
+      subHeaderLeft.appendChild(subCount);
+
+      const subActions = document.createElement("div");
+      const delSubBtn = document.createElement("button");
+      delSubBtn.className = "icon-btn";
+      delSubBtn.title = "Supprimer la sous-catégorie";
+      delSubBtn.textContent = "🗑";
+      delSubBtn.addEventListener("click", () => {
+        deleteSubcategoryAndMoveTasks(sub.id, sub.name);
       });
+      subActions.appendChild(delSubBtn);
 
-      headerActions.appendChild(addSubBtn);
-      headerActions.appendChild(deleteBtn);
+      subHeader.appendChild(subHeaderLeft);
+      subHeader.appendChild(subActions);
 
-      header.appendChild(headerLeft);
-      header.appendChild(headerActions);
+      const subBody = document.createElement("div");
+      subBody.className = "subcategory-body";
+      subBody.dataset.columnId = column.id;
+      subBody.dataset.subId = sub.id;
 
-      const body = document.createElement("div");
-      body.className = "column-body";
+      const tasksForSub = tasksForColumn.filter(t => t.subcategoryId === sub.id);
+      subCount.textContent = tasksForSub.length;
 
-      // tâches de cette colonne
-      const tasksForColumn = tasks.filter(t => t.columnId === column.id);
-      countSpan.textContent = tasksForColumn.length;
-
-      // sous-catégories pour cette colonne
-      const subsForCol = subcategories
-        .filter(s => s.columnId === column.id)
-        .sort((a, b) => (a.order || 0) - (b.order || 0));
-
-      // bloc "Sans sous-catégorie"
-      const noSubTasks = tasksForColumn.filter(t => !t.subcategoryId);
-      const noSubBlock = document.createElement("div");
-      noSubBlock.className = "subcategory subcategory--none";
-
-      const noSubBody = document.createElement("div");
-      noSubBody.className = "subcategory-body";
-      noSubBody.dataset.columnId = column.id;
-      noSubBody.dataset.subId = "";
-
-      noSubTasks.forEach(item => {
-        const label = column.name;
+      tasksForSub.forEach(item => {
+        const label = sub.name;
         const card = createCard(item.id, item, label);
-        noSubBody.appendChild(card);
+        subBody.appendChild(card);
       });
 
-      // drag & drop sur bloc "sans sous-catégorie"
-      noSubBody.addEventListener("dragover", (e) => {
+      // drag & drop sur cette sous-catégorie
+      subBody.addEventListener("dragover", (e) => {
         e.preventDefault();
-        noSubBody.classList.add("subcategory-body--hover");
+        subBody.classList.add("subcategory-body--hover");
       });
-      noSubBody.addEventListener("dragleave", () => {
-        noSubBody.classList.remove("subcategory-body--hover");
+      subBody.addEventListener("dragleave", () => {
+        subBody.classList.remove("subcategory-body--hover");
       });
-      noSubBody.addEventListener("drop", async (e) => {
+      subBody.addEventListener("drop", async (e) => {
         e.preventDefault();
-        noSubBody.classList.remove("subcategory-body--hover");
+        subBody.classList.remove("subcategory-body--hover");
         const id = e.dataTransfer.getData("text/plain");
         if (!id) return;
         try {
           await db.collection("tasks").doc(id).update({
             columnId: column.id,
-            subcategoryId: null
+            subcategoryId: sub.id
           });
         } catch (err) {
           console.error(err);
           alert("Erreur lors du déplacement de la carte.");
         }
       });
+
+      subBlock.appendChild(subHeader);
+      subBlock.appendChild(subBody);
+      body.appendChild(subBlock);
+    });
+
+    colArticle.appendChild(header);
+    colArticle.appendChild(body);
+    board.appendChild(colArticle);
+  });
+
+  updateTaskColumnSelect();
+}
 
       // On n'affiche le bloc "Sans sous-catégorie" que s'il y a des cartes
       if (noSubTasks.length > 0) {
