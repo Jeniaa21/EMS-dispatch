@@ -139,12 +139,14 @@
       padding: 0.25rem 0.3rem 0.35rem;
       margin-bottom: 0.45rem;
       border: 1px solid #cbd5e1;
+      box-shadow: 0 2px 6px rgba(15,23,42,0.08);
     }
 
     .subcategory--none {
       background: transparent;
       border-style: dashed;
       border-color: #cbd5e1;
+      box-shadow: none;
     }
 
     .subcategory-header {
@@ -334,7 +336,7 @@
       color: #6b7280;
     }
 
-    /* MENU DE COULEUR (style palette) */
+    /* MENU DE COULEUR */
     .color-menu {
       position: fixed;
       background: #ffffff;
@@ -394,7 +396,6 @@
 
 <main>
   <div class="top-bar">
-    <!-- Formulaire ajout de tâche -->
     <form id="addTaskForm" class="form-inline">
       <input type="text" id="taskTitle" placeholder="Titre" required />
       <input type="text" id="taskDesc" placeholder="Description (optionnel)" />
@@ -403,7 +404,6 @@
       <button type="submit" class="btn">+ Carte</button>
     </form>
 
-    <!-- Formulaire ajout de catégorie -->
     <form id="addColumnForm" class="form-inline">
       <input type="text" id="columnName" placeholder="Nouvelle catégorie" required />
       <button type="submit" class="btn">+ Catégorie</button>
@@ -417,13 +417,11 @@
   Héberge ce fichier sur GitHub Pages pour partager ton Kanban avec tout le monde.
 </footer>
 
-<!-- Menu couleur flottant -->
 <div id="colorMenu" class="color-menu hidden">
   <div id="colorMenuTitle" class="color-menu-title">Couleur</div>
   <div id="colorMenuColors" class="color-menu-grid"></div>
 </div>
 
-<!-- Firebase (Compat) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
@@ -529,7 +527,6 @@
   taskColumnSelect.addEventListener("change", updateTaskSubSelect);
 
   // --- menu couleur ---
-
   COLOR_PALETTE.forEach(color => {
     const btn = document.createElement("button");
     btn.className = "color-swatch";
@@ -574,7 +571,8 @@
 
     card.style.background = color;
     card.style.borderColor = color;
-    card.style.boxShadow = `0 4px 12px ${color}44`;
+    // Ombre neutre, pas colorée
+    card.style.boxShadow = "0 2px 6px rgba(15,23,42,0.12)";
 
     const r = parseInt(color.substr(1,2),16);
     const g = parseInt(color.substr(3,2),16);
@@ -590,7 +588,7 @@
     card.querySelectorAll(".card-meta").forEach(el => el.style.color = secondary);
   }
 
-  // --- création carte avec drop précis ---
+  // --- création carte ---
 
   function createCard(id, data, label, columnId, subId) {
     const card = document.createElement("div");
@@ -783,7 +781,8 @@
 
       if (column.color) {
         colArticle.style.borderColor = column.color;
-        colArticle.style.boxShadow = `0 6px 18px ${column.color}33`;
+        // ombre neutre, pas colorée
+        colArticle.style.boxShadow = "0 6px 14px rgba(15,23,42,0.12)";
       }
 
       const header = document.createElement("div");
@@ -977,7 +976,8 @@
 
         if (sub.color) {
           subBlock.style.borderColor = sub.color;
-          subBlock.style.boxShadow = `0 4px 10px ${sub.color}33`;
+          // ombre neutre
+          subBlock.style.boxShadow = "0 2px 6px rgba(15,23,42,0.08)";
         }
 
         const subHeader = document.createElement("div");
