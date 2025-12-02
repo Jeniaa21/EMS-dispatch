@@ -10,14 +10,14 @@
     body {
       margin: 0;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #f3f4f6;
-      color: #111827;
+      background: #020617; /* fond très sombre */
+      color: #e5e7eb;
     }
 
     header {
-      padding: 1rem 2rem;
-      background: #111827;
-      color: white;
+      padding: 0.9rem 1.5rem;
+      background: #020617;
+      border-bottom: 1px solid #1f2937;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -25,16 +25,18 @@
 
     header h1 {
       margin: 0;
-      font-size: 1.4rem;
+      font-size: 1.2rem;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+      color: #f9fafb;
     }
 
     main {
-      padding: 1rem;
-      max-width: 1200px;
+      padding: 1rem 1.5rem 1rem;
+      max-width: 1400px;
       margin: 0 auto;
     }
 
-    /* Board horizontal */
     .board {
       display: flex;
       gap: 1rem;
@@ -44,14 +46,16 @@
     }
 
     .column {
-      background: #e5e7eb;
-      border-radius: 0.75rem;
-      padding: 0.75rem;
+      background: #020617;
+      border-radius: 0.9rem;
+      border: 1px solid #1f2937;
+      padding: 0.7rem;
       display: flex;
       flex-direction: column;
-      max-height: calc(100vh - 180px);
-      min-width: 260px;
+      max-height: calc(100vh - 190px);
+      min-width: 270px;
       flex: 0 0 auto;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.45);
     }
 
     .column-header {
@@ -66,20 +70,23 @@
       font-weight: 600;
       font-size: 0.95rem;
       cursor: pointer;
-      padding: 0.1rem 0.3rem;
-      border-radius: 0.5rem;
+      padding: 0.1rem 0.35rem;
+      border-radius: 999px;
+      background: rgba(15,23,42,0.8);
+      color: #e5e7eb;
     }
 
     .column-title:hover {
-      background: rgba(0,0,0,0.05);
+      background: rgba(15,23,42,1);
     }
 
     .column-count {
-      background: #111827;
-      color: white;
+      background: #0f172a;
+      color: #9ca3af;
       border-radius: 999px;
-      padding: 0 0.5rem;
+      padding: 0 0.55rem;
       font-size: 0.75rem;
+      border: 1px solid #1f2937;
     }
 
     .column-actions {
@@ -96,30 +103,33 @@
       line-height: 1;
       opacity: 0.6;
       padding: 0.1rem;
+      color: #9ca3af;
     }
 
     .icon-btn:hover {
       opacity: 1;
+      color: #e5e7eb;
     }
 
     .column-body {
       flex: 1;
       overflow-y: auto;
       padding: 0.25rem;
-      border-radius: 0.5rem;
+      border-radius: 0.7rem;
     }
 
-    /* bloc sous-catégorie */
     .subcategory {
-      background: #d1d5db;
-      border-radius: 0.6rem;
-      padding: 0.3rem;
-      margin-bottom: 0.4rem;
+      background: #020617;
+      border-radius: 0.7rem;
+      padding: 0.25rem 0.3rem 0.35rem;
+      margin-bottom: 0.45rem;
+      border: 1px solid #111827;
     }
 
     .subcategory--none {
       background: transparent;
-      padding-top: 0;
+      border-style: dashed;
+      border-color: #1f2937;
     }
 
     .subcategory-header {
@@ -132,79 +142,86 @@
 
     .subcategory-title {
       font-weight: 500;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       cursor: pointer;
-      padding: 0.05rem 0.3rem;
-      border-radius: 0.4rem;
+      padding: 0.05rem 0.35rem;
+      border-radius: 999px;
+      background: #0b1120;
+      color: #cbd5f5;
     }
 
     .subcategory-title:hover {
-      background: rgba(0,0,0,0.06);
+      background: #111827;
     }
 
     .subcategory-count {
       font-size: 0.7rem;
-      background: #4b5563;
-      color: white;
+      background: #0f172a;
+      color: #9ca3af;
       border-radius: 999px;
       padding: 0 0.45rem;
+      border: 1px solid #1f2937;
     }
 
     .subcategory-body {
-      border-radius: 0.4rem;
+      border-radius: 0.45rem;
       padding: 0.15rem;
       min-height: 24px;
       transition: background 0.15s ease, outline 0.15s ease;
     }
 
     .subcategory-body--hover {
-      background: #e5e7eb;
-      outline: 2px dashed #374151;
+      background: rgba(15,23,42,0.8);
+      outline: 1px dashed #4b5563;
       outline-offset: -2px;
     }
 
     .card {
-      background: white;
-      border-radius: 0.75rem;
+      background: #020617;
+      border-radius: 0.7rem;
       padding: 0.5rem 0.6rem;
       margin-bottom: 0.5rem;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.5);
       cursor: grab;
-      transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.1s ease;
+      border: 1px solid #111827;
+      transition: transform 0.1s ease, box-shadow 0.1s ease, border-color 0.1s ease;
     }
 
     .card:active {
       cursor: grabbing;
       transform: scale(1.02);
-      box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.6);
     }
 
     .card-title {
       font-weight: 600;
       font-size: 0.9rem;
       margin-bottom: 0.2rem;
+      color: #e5e7eb;
     }
 
     .card-desc {
       font-size: 0.8rem;
-      color: #4b5563;
+      color: #9ca3af;
       margin-bottom: 0.25rem;
     }
 
     .card-meta {
       font-size: 0.7rem;
-      color: #9ca3af;
+      color: #6b7280;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 0.25rem;
     }
 
     .tag {
       font-size: 0.7rem;
-      background: #eef2ff;
-      color: #3730a3;
+      background: rgba(34,197,94,0.12);
+      color: #4ade80;
       border-radius: 999px;
-      padding: 0.05rem 0.4rem;
+      padding: 0.05rem 0.5rem;
+      border: 1px solid rgba(34,197,94,0.2);
     }
 
     .top-bar {
@@ -220,9 +237,11 @@
       flex-wrap: wrap;
       gap: 0.4rem;
       align-items: center;
-      background: #e5e7eb;
-      padding: 0.4rem 0.6rem;
+      background: #020617;
       border-radius: 999px;
+      padding: 0.4rem 0.6rem;
+      border: 1px solid #1f2937;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
     }
 
     .form-inline input,
@@ -232,7 +251,13 @@
       padding: 0.25rem 0.5rem;
       border-radius: 999px;
       outline: none;
-      background: white;
+      background: #020617;
+      color: #e5e7eb;
+      border: 1px solid #111827;
+    }
+
+    .form-inline input::placeholder {
+      color: #6b7280;
     }
 
     .btn {
@@ -242,10 +267,14 @@
       font-size: 0.8rem;
       font-weight: 500;
       cursor: pointer;
-      background: #111827;
-      color: white;
+      background: #22c55e;
+      color: #022c22;
       transition: background 0.15s ease, transform 0.05s ease, box-shadow 0.05s ease;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      box-shadow: 0 2px 10px rgba(34,197,94,0.35);
+    }
+
+    .btn:hover {
+      background: #16a34a;
     }
 
     .btn:active {
@@ -260,52 +289,78 @@
       gap: 0.3rem;
       padding: 0.15rem 0.5rem;
       border-radius: 999px;
-      background: rgba(16, 185, 129, 0.1);
-      color: #a7f3d0;
+      background: rgba(34,197,94,0.12);
+      color: #bbf7d0;
+      border: 1px solid rgba(34,197,94,0.4);
     }
 
     .badge-live-dot {
-      width: 6px;
-      height: 6px;
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
-      background: #34d399;
-      box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.35);
+      background: #22c55e;
+      box-shadow: 0 0 0 4px rgba(34,197,94,0.35);
     }
 
     .status {
       font-size: 0.75rem;
       opacity: 0.7;
+      text-align: right;
+      margin-top: 0.2rem;
     }
 
-    .status.ok {
-      color: #10b981;
-    }
-
-    .status.err {
-      color: #ef4444;
-    }
+    .status.ok { color: #22c55e; }
+    .status.err { color: #ef4444; }
 
     footer {
       font-size: 0.7rem;
       text-align: center;
-      padding: 0.5rem;
+      padding: 0.7rem;
       color: #6b7280;
     }
 
+    /* inputs de couleur */
+    .color-input {
+      -webkit-appearance: none;
+      appearance: none;
+      border-radius: 999px;
+      border: 1px solid #1f2937;
+      padding: 0;
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      background: transparent;
+      overflow: hidden;
+    }
+    .color-input::-webkit-color-swatch {
+      border: none;
+      border-radius: 999px;
+      padding: 0;
+    }
+    .color-input::-moz-color-swatch {
+      border: none;
+      border-radius: 999px;
+      padding: 0;
+    }
+
+    .color-input--small {
+      width: 16px;
+      height: 16px;
+    }
+
     @media (max-width: 768px) {
-      .board {
-        flex-direction: row;
-      }
+      main { padding: 0.75rem 0.5rem; }
+      .board { flex-direction: row; }
     }
   </style>
 </head>
 <body>
 <header>
-  <h1>Kanban Temps Réel</h1>
+  <h1>INTRANET • KANBAN</h1>
   <div>
     <div class="badge-live">
       <span class="badge-live-dot"></span>
-      Synchro temps réel
+      Temps réel
     </div>
     <div id="statusText" class="status ok">Connecté</div>
   </div>
@@ -319,13 +374,13 @@
       <input type="text" id="taskDesc" placeholder="Description (optionnel)" />
       <select id="taskColumn"></select>
       <select id="taskSubcategory"></select>
-      <button type="submit" class="btn">+ Ajouter une carte</button>
+      <button type="submit" class="btn">+ Carte</button>
     </form>
 
     <!-- Formulaire ajout de catégorie -->
     <form id="addColumnForm" class="form-inline">
       <input type="text" id="columnName" placeholder="Nouvelle catégorie" required />
-      <button type="submit" class="btn">+ Ajouter une catégorie</button>
+      <button type="submit" class="btn">+ Catégorie</button>
     </form>
   </div>
 
@@ -342,7 +397,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
 <script>
-  // 🔧 CONFIG FIREBASE (tes valeurs)
   const firebaseConfig = {
     apiKey: "AIzaSyBsHFp5MfmldTvcDkatE4P9gXNRZ1Ivk0o",
     authDomain: "ems-dispatch-d1cd2.firebaseapp.com",
@@ -366,9 +420,9 @@
   const columnNameInput = document.getElementById("columnName");
   const board = document.getElementById("board");
 
-  let columns = [];        // {id, name, order}
-  let subcategories = [];  // {id, columnId, name, order}
-  let tasks = [];          // {id, title, description, columnId, subcategoryId}
+  let columns = [];        // {id, name, order, color?}
+  let subcategories = [];  // {id, columnId, name, order, color?}
+  let tasks = [];          // {id, title, description, columnId, subcategoryId, color?}
   let hasInitializedColumns = false;
 
   function setStatus(msg, ok = true) {
@@ -429,11 +483,28 @@
 
   taskColumnSelect.addEventListener("change", updateTaskSubSelect);
 
+  function createColorInput(initial, className, onChange) {
+    const input = document.createElement("input");
+    input.type = "color";
+    input.className = "color-input " + (className || "");
+    input.value = initial || "#22c55e";
+    input.addEventListener("input", (e) => {
+      if (onChange) onChange(e.target.value);
+    });
+    return input;
+  }
+
   function createCard(id, data, label) {
     const card = document.createElement("div");
     card.className = "card";
     card.draggable = true;
     card.dataset.id = id;
+
+    // appliquer la couleur de bordure si définie
+    if (data.color) {
+      card.style.borderColor = data.color;
+      card.style.boxShadow = `0 4px 18px ${data.color}33`;
+    }
 
     const title = document.createElement("div");
     title.className = "card-title";
@@ -446,14 +517,31 @@
     const meta = document.createElement("div");
     meta.className = "card-meta";
 
+    const leftMeta = document.createElement("div");
+    leftMeta.style.display = "flex";
+    leftMeta.style.alignItems = "center";
+    leftMeta.style.gap = "0.3rem";
+
     const tag = document.createElement("span");
     tag.className = "tag";
     tag.textContent = label || "Sans catégorie";
 
+    const colorInput = createColorInput(data.color || "#22c55e", "color-input--small", async (val) => {
+      try {
+        await db.collection("tasks").doc(id).update({ color: val });
+      } catch (err) {
+        console.error(err);
+        alert("Erreur lors de la mise à jour de la couleur de la carte.");
+      }
+    });
+
+    leftMeta.appendChild(tag);
+    leftMeta.appendChild(colorInput);
+
     const date = document.createElement("span");
     date.textContent = formatDate(data.createdAt);
 
-    meta.appendChild(tag);
+    meta.appendChild(leftMeta);
     meta.appendChild(date);
 
     card.appendChild(title);
@@ -464,7 +552,6 @@
       e.dataTransfer.setData("text/plain", id);
     });
 
-    // double-clic -> supprimer carte
     card.addEventListener("dblclick", async () => {
       if (confirm("Supprimer cette carte ?")) {
         try {
@@ -531,6 +618,11 @@
       const colArticle = document.createElement("article");
       colArticle.className = "column";
 
+      if (column.color) {
+        colArticle.style.borderColor = column.color;
+        colArticle.style.boxShadow = `0 10px 30px ${column.color}33`;
+      }
+
       // HEADER
       const header = document.createElement("div");
       header.className = "column-header";
@@ -552,7 +644,7 @@
         input.style.fontSize = "0.9rem";
         input.style.padding = "0.1rem 0.3rem";
         input.style.borderRadius = "0.5rem";
-        input.style.border = "1px solid #9ca3af";
+        input.style.border = "1px solid #4b5563";
         input.style.outline = "none";
         headerLeft.replaceChild(input, titleSpan);
         input.focus();
@@ -587,6 +679,15 @@
       const headerActions = document.createElement("div");
       headerActions.className = "column-actions";
 
+      const colColorInput = createColorInput(column.color || "#22c55e", "", async (val) => {
+        try {
+          await db.collection("columns").doc(column.id).update({ color: val });
+        } catch (err) {
+          console.error(err);
+          alert("Erreur lors de la mise à jour de la couleur de la colonne.");
+        }
+      });
+
       // bouton ajout sous-catégorie
       const addSubBtn = document.createElement("button");
       addSubBtn.className = "icon-btn";
@@ -620,6 +721,7 @@
         deleteColumnAndTasks(column.id, column.name);
       });
 
+      headerActions.appendChild(colColorInput);
       headerActions.appendChild(addSubBtn);
       headerActions.appendChild(deleteBtn);
 
@@ -639,7 +741,7 @@
         .filter(s => s.columnId === column.id)
         .sort((a, b) => (a.order || 0) - (b.order || 0));
 
-      // 👉 bloc "Sans sous-catégorie" TOUJOURS visible
+      // bloc "Sans sous-catégorie" TOUJOURS visible
       const noSubTasks = tasksForColumn.filter(t => !t.subcategoryId);
       const noSubBlock = document.createElement("div");
       noSubBlock.className = "subcategory subcategory--none";
@@ -702,6 +804,11 @@
         const subBlock = document.createElement("div");
         subBlock.className = "subcategory";
 
+        if (sub.color) {
+          subBlock.style.borderColor = sub.color;
+          subBlock.style.boxShadow = `0 4px 16px ${sub.color}33`;
+        }
+
         const subHeader = document.createElement("div");
         subHeader.className = "subcategory-header";
 
@@ -722,7 +829,7 @@
           input.style.fontSize = "0.8rem";
           input.style.padding = "0.05rem 0.3rem";
           input.style.borderRadius = "0.4rem";
-          input.style.border = "1px solid #9ca3af";
+          input.style.border = "1px solid #4b5563";
           input.style.outline = "none";
           subHeaderLeft.replaceChild(input, subTitle);
           input.focus();
@@ -755,6 +862,19 @@
         subHeaderLeft.appendChild(subCount);
 
         const subActions = document.createElement("div");
+        subActions.style.display = "flex";
+        subActions.style.alignItems = "center";
+        subActions.style.gap = "0.2rem";
+
+        const subColorInput = createColorInput(sub.color || "#22c55e", "color-input--small", async (val) => {
+          try {
+            await db.collection("subcategories").doc(sub.id).update({ color: val });
+          } catch (err) {
+            console.error(err);
+            alert("Erreur lors de la mise à jour de la couleur de la sous-catégorie.");
+          }
+        });
+
         const delSubBtn = document.createElement("button");
         delSubBtn.className = "icon-btn";
         delSubBtn.title = "Supprimer la sous-catégorie";
@@ -762,6 +882,8 @@
         delSubBtn.addEventListener("click", () => {
           deleteSubcategoryAndMoveTasks(sub.id, sub.name);
         });
+
+        subActions.appendChild(subColorInput);
         subActions.appendChild(delSubBtn);
 
         subHeader.appendChild(subHeaderLeft);
