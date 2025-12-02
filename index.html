@@ -247,6 +247,8 @@
       border-radius: 999px;
       padding: 0.05rem 0.5rem;
       border: 1px solid #bfdbfe;
+      cursor: pointer;
+      user-select: none;
     }
 
     .top-bar {
@@ -399,6 +401,7 @@
     <form id="addTaskForm" class="form-inline">
       <input type="text" id="taskTitle" placeholder="Titre" required />
       <input type="text" id="taskDesc" placeholder="Description (optionnel)" />
+      <input type="text" id="taskBadge" placeholder="Badge (optionnel)" />
       <select id="taskColumn"></select>
       <select id="taskSubcategory"></select>
       <button type="submit" class="btn">+ Carte</button>
@@ -444,6 +447,7 @@
   const addColumnForm = document.getElementById("addColumnForm");
   const taskTitleInput = document.getElementById("taskTitle");
   const taskDescInput = document.getElementById("taskDesc");
+  const taskBadgeInput = document.getElementById("taskBadge");
   const taskColumnSelect = document.getElementById("taskColumn");
   const taskSubSelect = document.getElementById("taskSubcategory");
   const columnNameInput = document.getElementById("columnName");
@@ -571,7 +575,6 @@
 
     card.style.background = color;
     card.style.borderColor = color;
-    // Ombre neutre, pas colorée
     card.style.boxShadow = "0 2px 6px rgba(15,23,42,0.12)";
 
     const r = parseInt(color.substr(1,2),16);
@@ -586,6 +589,24 @@
     card.querySelectorAll(".card-title").forEach(el => el.style.color = textColor);
     card.querySelectorAll(".card-desc").forEach(el => el.style.color = secondary);
     card.querySelectorAll(".card-meta").forEach(el => el.style.color = secondary);
+  }
+
+  function applyBadgeColor(tag, color) {
+    if (!color) {
+      tag.style.background = "";
+      tag.style.borderColor = "";
+      tag.style.color = "";
+      return;
+    }
+    const r = parseInt(color.substr(1,2),16);
+    const g = parseInt(color.substr(3,2),16);
+    const b = parseInt(color.substr(5,2),16);
+    const luminance = 0.299*r + 0.587*g + 0.114*b;
+    const textColor = luminance < 140 ? "#f9fafb" : "#111827";
+
+    tag.style.background = color;
+    tag.style.borderColor = color;
+    tag.style.color = textColor;
   }
 
   // --- création carte ---
@@ -616,7 +637,40 @@
 
     const tag = document.createElement("span");
     tag.className = "tag";
-    tag.textContent = label || "Sans catégorie";
+    tag.textContent = data.badgeLabel || label || "Sans libellé";
+
+    // clic = changer couleur du badge
+    tag.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const rect = tag.getBoundingClientRect();
+      openColorMenu(rect.left, rect.bottom + 4, "Couleur du badge", async (newColor) => {
+        try {
+          await db.collection("tasks").doc(id).update({ badgeColor: newColor });
+        } catch (err) {
+          console.error(err);
+          alert("Erreur lors de la mise à jour de la couleur du badge.");
+        }
+      });
+    });
+
+    // double-clic = renommer le badge
+    tag.addEventListener("dblclick", async (e) => {
+      e.stopPropagation();
+      const currentText = data.badgeLabel || tag.textContent;
+      const newText = prompt("Texte du badge :", currentText);
+      if (newText === null) return;
+      const trimmed = newText.trim();
+      try {
+        await db.collection("tasks").doc(id).update({
+          badgeLabel: trimmed || null
+        });
+      } catch (err) {
+        console.error(err);
+        alert("Erreur lors de la mise à jour du badge.");
+      }
+    });
+
+    applyBadgeColor(tag, data.badgeColor);
 
     const colorBtn = document.createElement("button");
     colorBtn.className = "color-trigger small";
@@ -781,7 +835,6 @@
 
       if (column.color) {
         colArticle.style.borderColor = column.color;
-        // ombre neutre, pas colorée
         colArticle.style.boxShadow = "0 6px 14px rgba(15,23,42,0.12)";
       }
 
@@ -976,7 +1029,6 @@
 
         if (sub.color) {
           subBlock.style.borderColor = sub.color;
-          // ombre neutre
           subBlock.style.boxShadow = "0 2px 6px rgba(15,23,42,0.08)";
         }
 
@@ -1190,6 +1242,7 @@
     e.preventDefault();
     const title = taskTitleInput.value.trim();
     const description = taskDescInput.value.trim();
+    const badgeLabel = taskBadgeInput.value.trim() || null;
     const columnId = taskColumnSelect.value;
     const subId = taskSubSelect.value || null;
 
@@ -1204,6 +1257,7 @@
       await db.collection("tasks").add({
         title,
         description,
+        badgeLabel,
         columnId,
         subcategoryId: subId,
         order,
@@ -1211,6 +1265,7 @@
       });
       taskTitleInput.value = "";
       taskDescInput.value = "";
+      taskBadgeInput.value = "";
     } catch (err) {
       console.error(err);
       alert("Erreur lors de l'ajout de la tâche.");
