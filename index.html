@@ -502,8 +502,25 @@
 
     // appliquer la couleur de bordure si définie
     if (data.color) {
-      card.style.borderColor = data.color;
-      card.style.boxShadow = `0 4px 18px ${data.color}33`;
+      card.style.background = data.color;     // Couleur totale de la carte
+      card.style.borderColor = data.color;    // Bordure assortie
+      card.style.boxShadow = `0 4px 18px ${data.color}55`; // Ombre subtile colorée
+
+      // Ajuster automatiquement la couleur du texte selon la luminosité
+      const r = parseInt(data.color.substr(1, 2), 16);
+      const g = parseInt(data.color.substr(3, 2), 16);
+      const b = parseInt(data.color.substr(5, 2), 16);
+      const luminance = (0.299*r + 0.587*g + 0.114*b);
+
+      if (luminance < 140) {
+        // Texte clair sur couleur sombre
+        card.style.color = "#ffffff";
+        card.querySelectorAll(".card-title, .card-desc, .card-meta").forEach(el => el.style.color = "#f1f5f9");
+      } else {
+        // Texte foncé sur couleur claire
+        card.style.color = "#0f172a";
+        card.querySelectorAll(".card-title, .card-desc, .card-meta").forEach(el => el.style.color = "#0f172a");
+      }
     }
 
     const title = document.createElement("div");
