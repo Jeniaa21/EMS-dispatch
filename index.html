@@ -24,11 +24,61 @@
       box-shadow: 0 2px 6px rgba(15,23,42,0.35);
     }
 
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
     header h1 {
       margin: 0;
       font-size: 1.1rem;
       letter-spacing: 0.06em;
       text-transform: uppercase;
+    }
+
+    /* Switch mode développeur */
+    .dev-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+      color: #e5e7eb;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .dev-toggle input {
+      display: none;
+    }
+
+    .dev-toggle-slider {
+      width: 34px;
+      height: 18px;
+      border-radius: 999px;
+      background: #4b5563;
+      position: relative;
+      transition: background 0.15s ease;
+    }
+
+    .dev-toggle-slider::before {
+      content: "";
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      background: #f9fafb;
+      top: 2px;
+      left: 2px;
+      transition: transform 0.15s ease;
+    }
+
+    .dev-toggle input:checked + .dev-toggle-slider {
+      background: #22c55e;
+    }
+
+    .dev-toggle input:checked + .dev-toggle-slider::before {
+      transform: translateX(16px);
     }
 
     main {
@@ -379,6 +429,21 @@
       box-shadow: 0 0 0 2px rgba(59,130,246,0.35);
     }
 
+    /* Dev mode: tout ce qui est .dev-only est désactivé quand le mode dev est OFF */
+    .dev-only {
+      transition: opacity 0.15s ease;
+    }
+
+    body:not(.dev-mode-on) .dev-only {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+
+    body.dev-mode-on .dev-only {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
     @media (max-width: 768px) {
       main { padding: 0.75rem 0.5rem; }
       .board { flex-direction: row; }
@@ -387,7 +452,14 @@
 </head>
 <body>
 <header>
-  <h1>Dispatch SAMS</h1>
+  <div class="header-left">
+    <h1>Dispatch SAMS</h1>
+    <label class="dev-toggle">
+      <span>Mode développeur</span>
+      <input type="checkbox" id="devToggle" />
+      <span class="dev-toggle-slider"></span>
+    </label>
+  </div>
   <div>
     <div class="badge-live">
       <span class="badge-live-dot"></span> Temps réel
@@ -397,7 +469,7 @@
 </header>
 
 <main>
-  <div class="top-bar">
+  <div class="top-bar dev-only">
     <form id="addTaskForm" class="form-inline">
       <input type="text" id="taskTitle" placeholder="Titre" required />
       <input type="text" id="taskDesc" placeholder="Description (optionnel)" />
@@ -452,6 +524,7 @@
   const taskSubSelect = document.getElementById("taskSubcategory");
   const columnNameInput = document.getElementById("columnName");
   const board = document.getElementById("board");
+  const devToggle = document.getElementById("devToggle");
 
   const colorMenu = document.getElementById("colorMenu");
   const colorMenuTitle = document.getElementById("colorMenuTitle");
@@ -471,6 +544,18 @@
   let hasInitializedColumns = false;
 
   let colorMenuCallback = null;
+  let devMode = false;
+
+  function setDevMode(enabled) {
+    devMode = enabled;
+    document.body.classList.toggle("dev-mode-on", enabled);
+    // Optionnel : tu peux stocker dans le localStorage si tu veux garder l'état
+    // localStorage.setItem("devMode", enabled ? "1" : "0");
+  }
+
+  devToggle.addEventListener("change", () => {
+    setDevMode(devToggle.checked);
+  });
 
   function setStatus(msg, ok = true) {
     statusText.textContent = msg;
@@ -531,11 +616,13 @@
   taskColumnSelect.addEventListener("change", updateTaskSubSelect);
 
   // --- menu couleur ---
+
   COLOR_PALETTE.forEach(color => {
     const btn = document.createElement("button");
-    btn.className = "color-swatch";
+    btn.className = "color-swatch dev-only";
     btn.style.background = color;
     btn.addEventListener("click", () => {
+      if (!devMode) return;
       if (colorMenuCallback) colorMenuCallback(color);
       closeColorMenu();
     });
@@ -543,6 +630,7 @@
   });
 
   function openColorMenu(x, y, title, callback) {
+    if (!devMode) return; // sécurité
     colorMenuTitle.textContent = title || "Couleur";
     colorMenuCallback = callback;
     colorMenu.style.left = x + "px";
@@ -639,8 +727,9 @@
     tag.className = "tag";
     tag.textContent = data.badgeLabel || label || "Sans libellé";
 
-    // clic = changer couleur du badge
+    // clic = changer couleur du badge (mode dev uniquement)
     tag.addEventListener("click", (e) => {
+      if (!devMode) return;
       e.stopPropagation();
       const rect = tag.getBoundingClientRect();
       openColorMenu(rect.left, rect.bottom + 4, "Couleur du badge", async (newColor) => {
@@ -653,8 +742,9 @@
       });
     });
 
-    // double-clic = renommer le badge
+    // double-clic = renommer le badge (mode dev uniquement)
     tag.addEventListener("dblclick", async (e) => {
+      if (!devMode) return;
       e.stopPropagation();
       const currentText = data.badgeLabel || tag.textContent;
       const newText = prompt("Texte du badge :", currentText);
@@ -673,9 +763,10 @@
     applyBadgeColor(tag, data.badgeColor);
 
     const colorBtn = document.createElement("button");
-    colorBtn.className = "color-trigger small";
+    colorBtn.className = "color-trigger small dev-only";
     colorBtn.style.background = data.color || "#22c55e";
     colorBtn.addEventListener("click", (e) => {
+      if (!devMode) return;
       e.stopPropagation();
       const rect = colorBtn.getBoundingClientRect();
       openColorMenu(rect.left, rect.bottom + 4, "Couleur de la carte", async (newColor) => {
@@ -768,6 +859,7 @@
     });
 
     card.addEventListener("dblclick", async () => {
+      if (!devMode) return;
       if (confirm("Supprimer cette carte ?")) {
         try {
           await db.collection("tasks").doc(id).delete();
@@ -782,6 +874,7 @@
   }
 
   async function deleteColumnAndTasks(columnId, columnName) {
+    if (!devMode) return;
     const ok = confirm(`Supprimer la catégorie "${columnName}" et toutes ses cartes ?`);
     if (!ok) return;
 
@@ -806,6 +899,7 @@
   }
 
   async function deleteSubcategoryAndMoveTasks(subId, subName) {
+    if (!devMode) return;
     const ok = confirm(`Supprimer la sous-catégorie "${subName}" et renvoyer ses cartes dans "Sans sous-catégorie" ?`);
     if (!ok) return;
 
@@ -851,6 +945,7 @@
       titleSpan.textContent = column.name;
 
       titleSpan.addEventListener("dblclick", () => {
+        if (!devMode) return;
         const input = document.createElement("input");
         input.type = "text";
         input.value = column.name;
@@ -893,9 +988,10 @@
       headerActions.className = "column-actions";
 
       const colColorBtn = document.createElement("button");
-      colColorBtn.className = "color-trigger";
+      colColorBtn.className = "color-trigger dev-only";
       colColorBtn.style.background = column.color || "#22c55e";
       colColorBtn.addEventListener("click", (e) => {
+        if (!devMode) return;
         e.stopPropagation();
         const rect = colColorBtn.getBoundingClientRect();
         openColorMenu(rect.left, rect.bottom + 4, "Couleur de la colonne", async (newColor) => {
@@ -909,10 +1005,11 @@
       });
 
       const addSubBtn = document.createElement("button");
-      addSubBtn.className = "icon-btn";
+      addSubBtn.className = "icon-btn dev-only";
       addSubBtn.title = "Ajouter une sous-catégorie";
       addSubBtn.textContent = "+";
       addSubBtn.addEventListener("click", async () => {
+        if (!devMode) return;
         const name = prompt("Nom de la nouvelle sous-catégorie :");
         if (!name) return;
         try {
@@ -933,7 +1030,7 @@
       });
 
       const deleteBtn = document.createElement("button");
-      deleteBtn.className = "icon-btn";
+      deleteBtn.className = "icon-btn dev-only";
       deleteBtn.title = "Supprimer la catégorie";
       deleteBtn.textContent = "🗑";
       deleteBtn.addEventListener("click", () => {
@@ -1045,6 +1142,7 @@
         subTitle.textContent = sub.name;
 
         subTitle.addEventListener("dblclick", () => {
+          if (!devMode) return;
           const input = document.createElement("input");
           input.type = "text";
           input.value = sub.name;
@@ -1089,9 +1187,10 @@
         subActions.style.gap = "0.2rem";
 
         const subColorBtn = document.createElement("button");
-        subColorBtn.className = "color-trigger small";
+        subColorBtn.className = "color-trigger small dev-only";
         subColorBtn.style.background = sub.color || "#22c55e";
         subColorBtn.addEventListener("click", (e) => {
+          if (!devMode) return;
           e.stopPropagation();
           const rect = subColorBtn.getBoundingClientRect();
           openColorMenu(rect.left, rect.bottom + 4, "Couleur de la sous-catégorie", async (newColor) => {
@@ -1105,7 +1204,7 @@
         });
 
         const delSubBtn = document.createElement("button");
-        delSubBtn.className = "icon-btn";
+        delSubBtn.className = "icon-btn dev-only";
         delSubBtn.title = "Supprimer la sous-catégorie";
         delSubBtn.textContent = "🗑";
         delSubBtn.addEventListener("click", () => {
@@ -1240,6 +1339,8 @@
 
   addTaskForm.addEventListener("submit", async (e) => {
     e.preventDefault();
+    if (!devMode) return;
+
     const title = taskTitleInput.value.trim();
     const description = taskDescInput.value.trim();
     const badgeLabel = taskBadgeInput.value.trim() || null;
@@ -1274,6 +1375,8 @@
 
   addColumnForm.addEventListener("submit", async (e) => {
     e.preventDefault();
+    if (!devMode) return;
+
     const name = columnNameInput.value.trim();
     if (!name) return;
 
@@ -1290,6 +1393,9 @@
       alert("Erreur lors de l'ajout de la catégorie.");
     }
   });
+
+  // Initial: mode dev OFF
+  setDevMode(false);
 </script>
 </body>
 </html>
