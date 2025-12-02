@@ -76,9 +76,7 @@
       color: #e5e7eb;
     }
 
-    .column-title:hover {
-      background: rgba(15,23,42,1);
-    }
+    .column-title:hover { background: rgba(15,23,42,1); }
 
     .column-count {
       background: #0f172a;
@@ -165,9 +163,7 @@
       color: #cbd5f5;
     }
 
-    .subcategory-title:hover {
-      background: #111827;
-    }
+    .subcategory-title:hover { background: #111827; }
 
     .subcategory-count {
       font-size: 0.7rem;
@@ -192,6 +188,7 @@
     }
 
     .card {
+      position: relative;
       background: #020617;
       border-radius: 0.7rem;
       padding: 0.5rem 0.6rem;
@@ -206,6 +203,14 @@
       cursor: grabbing;
       transform: scale(1.02);
       box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+    }
+
+    /* Indicateur de position de drop (haut/bas) */
+    .card--drag-over-top {
+      border-top: 2px solid #22c55e;
+    }
+    .card--drag-over-bottom {
+      border-bottom: 2px solid #22c55e;
     }
 
     .card-title {
@@ -564,7 +569,6 @@
     card.style.borderColor = color;
     card.style.boxShadow = `0 4px 18px ${color}55`;
 
-    // calcul de luminosité pour texte lisible
     const r = parseInt(color.substr(1,2),16);
     const g = parseInt(color.substr(3,2),16);
     const b = parseInt(color.substr(5,2),16);
@@ -579,13 +583,15 @@
     card.querySelectorAll(".card-meta").forEach(el => el.style.color = secondary);
   }
 
-  /* ===== CREATION CARTE ===== */
+  /* ===== CREATION CARTE AVEC DROP AU-DESSUS/DESSOUS ===== */
 
-  function createCard(id, data, label) {
+  function createCard(id, data, label, columnId, subId) {
     const card = document.createElement("div");
     card.className = "card";
     card.draggable = true;
     card.dataset.id = id;
+    card.dataset.columnId = columnId;
+    card.dataset.subId = subId || "";
 
     const title = document.createElement("div");
     title.className = "card-title";
@@ -638,10 +644,75 @@
 
     applyCardColor(card, data.color);
 
+    // drag start
     card.addEventListener("dragstart", (e) => {
       e.dataTransfer.setData("text/plain", id);
     });
 
+    // drag over : choisir au-dessus / en-dessous
+    card.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      const rect = card.getBoundingClientRect();
+      const offsetY = e.clientY - rect.top;
+      const position = offsetY < rect.height / 2 ? "before" : "after";
+      card.dataset.dropPosition = position;
+      card.classList.toggle("card--drag-over-top", position === "before");
+      card.classList.toggle("card--drag-over-bottom", position === "after");
+    });
+
+    card.addEventListener("dragleave", () => {
+      card.classList.remove("card--drag-over-top", "card--drag-over-bottom");
+      delete card.dataset.dropPosition;
+    });
+
+    // drop sur la carte => réordonnancement précis
+    card.addEventListener("drop", async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      card.classList.remove("card--drag-over-top", "card--drag-over-bottom");
+
+      const draggedId = e.dataTransfer.getData("text/plain");
+      if (!draggedId || draggedId === id) return;
+
+      const destColumnId = columnId;
+      const destSubId = subId || null;
+      const draggedTask = tasks.find(t => t.id === draggedId);
+      if (!draggedTask) return;
+
+      // tâches du groupe destination (colonne + sous-catégorie)
+      let destTasks = tasks
+        .filter(t => t.columnId === destColumnId && (t.subcategoryId || null) === destSubId && t.id !== draggedId)
+        .sort((a,b) => (a.order || 0) - (b.order || 0));
+
+      const targetIndex = destTasks.findIndex(t => t.id === id);
+      if (targetIndex === -1) return;
+
+      const position = card.dataset.dropPosition || "after";
+      let insertIndex = position === "before" ? targetIndex : targetIndex + 1;
+
+      const draggedClone = { ...draggedTask, columnId: destColumnId, subcategoryId: destSubId };
+      destTasks.splice(insertIndex, 0, draggedClone);
+
+      const batch = db.batch();
+      destTasks.forEach((t, idx) => {
+        const ref = db.collection("tasks").doc(t.id);
+        const updateData = { order: idx };
+        if (t.id === draggedId) {
+          updateData.columnId = destColumnId;
+          updateData.subcategoryId = destSubId;
+        }
+        batch.update(ref, updateData);
+      });
+
+      try {
+        await batch.commit();
+      } catch (err) {
+        console.error(err);
+        alert("Erreur lors du réordonnancement.");
+      }
+    });
+
+    // double-clic -> supprimer carte
     card.addEventListener("dblclick", async () => {
       if (confirm("Supprimer cette carte ?")) {
         try {
@@ -656,7 +727,7 @@
     return card;
   }
 
-  /* ===== SUPPRESSIONS ===== */
+  /* ===== SUPPRESSIONS COLONNES / SOUS-CAT ===== */
 
   async function deleteColumnAndTasks(columnId, columnName) {
     const ok = confirm(`Supprimer la catégorie "${columnName}" et toutes ses cartes ?`);
@@ -833,7 +904,6 @@
       const body = document.createElement("div");
       body.className = "column-body";
 
-      // tâches de cette colonne
       const tasksForColumn = tasks.filter(t => t.columnId === column.id);
       countSpan.textContent = tasksForColumn.length;
 
@@ -865,11 +935,14 @@
       noSubBody.dataset.columnId = column.id;
       noSubBody.dataset.subId = "";
 
-      noSubTasks.forEach(item => {
-        const label = column.name;
-        const card = createCard(item.id, item, label);
-        noSubBody.appendChild(card);
-      });
+      noSubTasks
+        .slice()
+        .sort((a,b) => (a.order || 0) - (b.order || 0))
+        .forEach(item => {
+          const label = column.name;
+          const card = createCard(item.id, item, label, column.id, null);
+          noSubBody.appendChild(card);
+        });
 
       noSubBody.addEventListener("dragover", (e) => {
         e.preventDefault();
@@ -884,9 +957,14 @@
         const id = e.dataTransfer.getData("text/plain");
         if (!id) return;
         try {
+          const destTasks = tasks
+            .filter(t => t.columnId === column.id && !t.subcategoryId && t.id !== id)
+            .sort((a,b) => (a.order || 0) - (b.order || 0));
+          const newOrder = destTasks.length ? destTasks[destTasks.length-1].order + 1 : 0;
           await db.collection("tasks").doc(id).update({
             columnId: column.id,
-            subcategoryId: null
+            subcategoryId: null,
+            order: newOrder
           });
         } catch (err) {
           console.error(err);
@@ -1000,12 +1078,14 @@
         subBody.dataset.columnId = column.id;
         subBody.dataset.subId = sub.id;
 
-        const tasksForSub = tasksForColumn.filter(t => t.subcategoryId === sub.id);
+        const tasksForSub = tasksForColumn
+          .filter(t => t.subcategoryId === sub.id)
+          .sort((a,b) => (a.order || 0) - (b.order || 0));
         subCount.textContent = tasksForSub.length;
 
         tasksForSub.forEach(item => {
           const label = sub.name;
-          const card = createCard(item.id, item, label);
+          const card = createCard(item.id, item, label, column.id, sub.id);
           subBody.appendChild(card);
         });
 
@@ -1022,9 +1102,14 @@
           const id = e.dataTransfer.getData("text/plain");
           if (!id) return;
           try {
+            const destTasks = tasks
+              .filter(t => t.columnId === column.id && t.subcategoryId === sub.id && t.id !== id)
+              .sort((a,b) => (a.order || 0) - (b.order || 0));
+            const newOrder = destTasks.length ? destTasks[destTasks.length-1].order + 1 : 0;
             await db.collection("tasks").doc(id).update({
               columnId: column.id,
-              subcategoryId: sub.id
+              subcategoryId: sub.id,
+              order: newOrder
             });
           } catch (err) {
             console.error(err);
@@ -1096,7 +1181,7 @@
     });
 
   db.collection("tasks")
-    .orderBy("createdAt", "asc")
+    .orderBy("order", "asc")
     .onSnapshot((snapshot) => {
       setStatus("Connecté");
       tasks = snapshot.docs.map(doc => ({
@@ -1120,11 +1205,17 @@
     if (!title || !columnId) return;
 
     try {
+      const existing = tasks
+        .filter(t => t.columnId === columnId && (t.subcategoryId || null) === (subId || null))
+        .sort((a,b) => (a.order || 0) - (b.order || 0));
+      const order = existing.length ? existing[existing.length-1].order + 1 : 0;
+
       await db.collection("tasks").add({
         title,
         description,
         columnId,
         subcategoryId: subId,
+        order,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
       taskTitleInput.value = "";
