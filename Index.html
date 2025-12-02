@@ -1,1 +1,473 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Kanban Temps Réel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    * { box-sizing: border-box; }
 
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f3f4f6;
+      color: #111827;
+    }
+
+    header {
+      padding: 1rem 2rem;
+      background: #111827;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.4rem;
+    }
+
+    main {
+      padding: 1rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .column {
+      background: #e5e7eb;
+      border-radius: 0.75rem;
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      max-height: calc(100vh - 180px);
+    }
+
+    .column-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .column-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .column-count {
+      background: #111827;
+      color: white;
+      border-radius: 999px;
+      padding: 0 0.5rem;
+      font-size: 0.75rem;
+    }
+
+    .column-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.25rem;
+      border-radius: 0.5rem;
+      transition: background 0.15s ease, outline 0.15s ease;
+    }
+
+    .column-body--hover {
+      background: #d1d5db;
+      outline: 2px dashed #374151;
+      outline-offset: -2px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 0.75rem;
+      padding: 0.5rem 0.6rem;
+      margin-bottom: 0.5rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+      cursor: grab;
+      transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.1s ease;
+    }
+
+    .card:active {
+      cursor: grabbing;
+      transform: scale(1.02);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    }
+
+    .card-title {
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 0.2rem;
+    }
+
+    .card-desc {
+      font-size: 0.8rem;
+      color: #4b5563;
+      margin-bottom: 0.25rem;
+    }
+
+    .card-meta {
+      font-size: 0.7rem;
+      color: #9ca3af;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .tag {
+      font-size: 0.7rem;
+      background: #eef2ff;
+      color: #3730a3;
+      border-radius: 999px;
+      padding: 0.05rem 0.4rem;
+    }
+
+    .top-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .form-inline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      align-items: center;
+      background: #e5e7eb;
+      padding: 0.4rem 0.6rem;
+      border-radius: 999px;
+    }
+
+    .form-inline input,
+    .form-inline select {
+      border: none;
+      font-size: 0.8rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 999px;
+      outline: none;
+      background: white;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 999px;
+      padding: 0.35rem 0.8rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      background: #111827;
+      color: white;
+      transition: background 0.15s ease, transform 0.05s ease, box-shadow 0.05s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+      box-shadow: 0 0 0 rgba(0,0,0,0.2);
+    }
+
+    .badge-live {
+      font-size: 0.7rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.1);
+      color: #a7f3d0;
+    }
+
+    .badge-live-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #34d399;
+      box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.35);
+    }
+
+    .status {
+      font-size: 0.75rem;
+      opacity: 0.7;
+    }
+
+    .status.ok {
+      color: #10b981;
+    }
+
+    .status.err {
+      color: #ef4444;
+    }
+
+    footer {
+      font-size: 0.7rem;
+      text-align: center;
+      padding: 0.5rem;
+      color: #6b7280;
+    }
+
+    @media (max-width: 768px) {
+      .board {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Kanban Temps Réel</h1>
+  <div>
+    <div class="badge-live">
+      <span class="badge-live-dot"></span>
+      Synchro temps réel
+    </div>
+    <div id="statusText" class="status ok">Connecté</div>
+  </div>
+</header>
+
+<main>
+  <div class="top-bar">
+    <form id="addTaskForm" class="form-inline">
+      <input type="text" id="taskTitle" placeholder="Titre" required />
+      <input type="text" id="taskDesc" placeholder="Description (optionnel)" />
+      <select id="taskColumn">
+        <option value="todo">À faire</option>
+        <option value="doing">En cours</option>
+        <option value="done">Terminé</option>
+      </select>
+      <button type="submit" class="btn">+ Ajouter</button>
+    </form>
+  </div>
+
+  <section class="board">
+    <article class="column">
+      <div class="column-header">
+        <span class="column-title">À faire</span>
+        <span class="column-count" id="count-todo">0</span>
+      </div>
+      <div class="column-body" data-status="todo"></div>
+    </article>
+
+    <article class="column">
+      <div class="column-header">
+        <span class="column-title">En cours</span>
+        <span class="column-count" id="count-doing">0</span>
+      </div>
+      <div class="column-body" data-status="doing"></div>
+    </article>
+
+    <article class="column">
+      <div class="column-header">
+        <span class="column-title">Terminé</span>
+        <span class="column-count" id="count-done">0</span>
+      </div>
+      <div class="column-body" data-status="done"></div>
+    </article>
+  </section>
+</main>
+
+<footer>
+  Héberge ce fichier sur GitHub Pages pour partager ton Kanban avec tout le monde.
+</footer>
+
+<!-- Firebase (Compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<script>
+  // 🔧 1) COLLE ICI TON firebaseConfig
+  const firebaseConfig = {
+    apiKey: "AIzaSyBsHFp5MfmldTvcDkatE4P9gXNRZ1Ivk0o",
+    authDomain: "ems-dispatch-d1cd2.firebaseapp.com",
+    projectId: "ems-dispatch-d1cd2",
+    storageBucket: "ems-dispatch-d1cd2.firebasestorage.app",
+    messagingSenderId: "529717769926",
+    appId: "1:529717769926:web:6cf7c152a0ca5fbccac9c7",
+    measurementId: "G-TZZFDBHVM2"
+  };
+
+  // Initialisation Firebase
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  const statusText = document.getElementById("statusText");
+  const addTaskForm = document.getElementById("addTaskForm");
+  const taskTitleInput = document.getElementById("taskTitle");
+  const taskDescInput = document.getElementById("taskDesc");
+  const taskColumnSelect = document.getElementById("taskColumn");
+
+  const columnBodies = document.querySelectorAll(".column-body");
+  const counts = {
+    todo: document.getElementById("count-todo"),
+    doing: document.getElementById("count-doing"),
+    done: document.getElementById("count-done")
+  };
+
+  function setStatus(msg, ok = true) {
+    statusText.textContent = msg;
+    statusText.classList.toggle("ok", ok);
+    statusText.classList.toggle("err", !ok);
+  }
+
+  function formatDate(timestamp) {
+    if (!timestamp) return "";
+    const date = timestamp.toDate();
+    return date.toLocaleString("fr-FR", {
+      day: "2-digit",
+      month: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  }
+
+  function createCard(id, data) {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.draggable = true;
+    card.dataset.id = id;
+    card.dataset.status = data.status;
+
+    const title = document.createElement("div");
+    title.className = "card-title";
+    title.textContent = data.title || "(Sans titre)";
+
+    const desc = document.createElement("div");
+    desc.className = "card-desc";
+    desc.textContent = data.description || "";
+
+    const meta = document.createElement("div");
+    meta.className = "card-meta";
+
+    const tag = document.createElement("span");
+    tag.className = "tag";
+    tag.textContent = data.status === "todo" ? "À faire" :
+                      data.status === "doing" ? "En cours" :
+                      "Terminé";
+
+    const date = document.createElement("span");
+    date.textContent = formatDate(data.createdAt);
+
+    meta.appendChild(tag);
+    meta.appendChild(date);
+
+    card.appendChild(title);
+    if (data.description) card.appendChild(desc);
+    card.appendChild(meta);
+
+    // Drag & drop
+    card.addEventListener("dragstart", (e) => {
+      e.dataTransfer.setData("text/plain", id);
+    });
+
+    // Double-clic : suppression
+    card.addEventListener("dblclick", async () => {
+      if (confirm("Supprimer cette carte ?")) {
+        try {
+          await db.collection("tasks").doc(id).delete();
+        } catch (err) {
+          console.error(err);
+          alert("Erreur lors de la suppression.");
+        }
+      }
+    });
+
+    return card;
+  }
+
+  function renderSnapshot(snapshot) {
+    // Réinitialiser les colonnes
+    const lists = { todo: [], doing: [], done: [] };
+
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const status = data.status || "todo";
+      if (!lists[status]) lists[status] = [];
+      lists[status].push({ id: doc.id, data });
+    });
+
+    Object.keys(lists).forEach(status => {
+      const colEl = document.querySelector('.column-body[data-status="' + status + '"]');
+      if (!colEl) return;
+      colEl.innerHTML = "";
+      lists[status].forEach(item => {
+        const card = createCard(item.id, item.data);
+        colEl.appendChild(card);
+      });
+      counts[status].textContent = lists[status].length;
+    });
+  }
+
+  // 🔄 Écoute temps réel Firestore
+  db.collection("tasks")
+    .orderBy("createdAt", "asc")
+    .onSnapshot(
+      (snapshot) => {
+        setStatus("Connecté");
+        renderSnapshot(snapshot);
+      },
+      (error) => {
+        console.error(error);
+        setStatus("Erreur de connexion Firestore", false);
+      }
+    );
+
+  // ➕ Ajout de carte
+  addTaskForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const title = taskTitleInput.value.trim();
+    const description = taskDescInput.value.trim();
+    const status = taskColumnSelect.value;
+
+    if (!title) return;
+
+    try {
+      await db.collection("tasks").add({
+        title,
+        description,
+        status,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      taskTitleInput.value = "";
+      taskDescInput.value = "";
+    } catch (err) {
+      console.error(err);
+      alert("Erreur lors de l'ajout de la tâche.");
+    }
+  });
+
+  // 🧲 Gestion des colonnes droppables
+  columnBodies.forEach(col => {
+    col.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      col.classList.add("column-body--hover");
+    });
+
+    col.addEventListener("dragleave", () => {
+      col.classList.remove("column-body--hover");
+    });
+
+    col.addEventListener("drop", async (e) => {
+      e.preventDefault();
+      col.classList.remove("column-body--hover");
+      const id = e.dataTransfer.getData("text/plain");
+      const newStatus = col.getAttribute("data-status");
+
+      if (!id || !newStatus) return;
+
+      try {
+        await db.collection("tasks").doc(id).update({ status: newStatus });
+      } catch (err) {
+        console.error(err);
+        alert("Erreur lors du déplacement de la carte.");
+      }
+    });
+  });
+</script>
+</body>
+</html>
