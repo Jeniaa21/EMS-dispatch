@@ -243,6 +243,18 @@
       outline-offset: -2px;
     }
 
+    .dragging-sub {
+      opacity: 0.4;
+    }
+
+    .sub-drop-top {
+      border-top: 3px solid #22c55e;
+    }
+
+    .sub-drop-bottom {
+      border-bottom: 3px solid #22c55e;
+    }
+
     .card {
       position: relative;
       background: #ffffff;
@@ -1110,6 +1122,80 @@
         const subBlock = document.createElement("div");
         subBlock.className = "subcategory";
 
+        subBlock.draggable = true;
+        subBlock.dataset.subId = sub.id;
+
+        subBlock.addEventListener("dragstart", (e) => {
+          if (!devMode) return;
+          e.dataTransfer.setData("subId", sub.id);
+          subBlock.classList.add("dragging-sub");
+        });
+
+        subBlock.addEventListener("dragend", () => {
+          subBlock.classList.remove("dragging-sub");
+        });
+
+
+        subBlock.addEventListener("dragover", (e) => {
+          if (!devMode) return;
+          e.preventDefault();
+  
+          const rect = subBlock.getBoundingClientRect();
+          const offsetY = e.clientY - rect.top;
+
+          if (offsetY < rect.height / 2) {
+            subBlock.classList.add("sub-drop-top");
+            subBlock.classList.remove("sub-drop-bottom");
+          } else {
+            subBlock.classList.add("sub-drop-bottom");
+            subBlock.classList.remove("sub-drop-top");
+          }
+        });
+
+        subBlock.addEventListener("dragleave", () => {
+          subBlock.classList.remove("sub-drop-top", "sub-drop-bottom");
+        });
+
+
+        subBlock.addEventListener("drop", async (e) => {
+          if (!devMode) return;
+          e.preventDefault();
+
+          const draggedSubId = e.dataTransfer.getData("subId");
+          if (!draggedSubId || draggedSubId === sub.id) return;
+
+          // Sous-catégories de la colonne
+          let siblings = subcategories
+            .filter(s => s.columnId === column.id)
+            .sort((a,b) => (a.order || 0) - (b.order || 0));
+
+          // Trouver index
+          const fromIndex = siblings.findIndex(s => s.id === draggedSubId);
+          const toIndex = siblings.findIndex(s => s.id === sub.id);
+
+          let insertAt = toIndex;
+          if (subBlock.classList.contains("sub-drop-bottom")) insertAt++;
+
+          // Réordonnancement
+          const moved = siblings.splice(fromIndex, 1)[0];
+          siblings.splice(insertAt, 0, moved);
+
+          // Appliquer nouveaux index dans Firestore
+          const batch = db.batch();
+          siblings.forEach((s, i) => {
+            batch.update(db.collection("subcategories").doc(s.id), { order: i });
+          });
+
+          try {
+            await batch.commit();
+          } catch (err) {
+            console.error(err);
+            alert("Erreur lors du déplacement de la sous-catégorie.");
+          }
+
+          subBlock.classList.remove("sub-drop-top", "sub-drop-bottom");
+        });
+        
         if (sub.color) {
           subBlock.style.borderColor = sub.color;
           subBlock.style.boxShadow = "0 2px 6px rgba(15,23,42,0.08)";
