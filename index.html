@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Dispatch SAMS - Kanban</title>
+  <title>Dispatch SAMS – Kanban</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -11,14 +11,15 @@
   <div class="header-left">
     <h1>DISPATCH SAMS</h1>
     <label class="dev-toggle">
-      <span>Mode développeur</span>
+      <span class="dev-label">Mode développeur</span>
       <input type="checkbox" id="devToggle" />
       <span class="dev-toggle-slider"></span>
     </label>
   </div>
   <div class="header-right">
     <div class="badge-live">
-      <span class="badge-live-dot"></span> Temps réel
+      <span class="badge-live-dot"></span>
+      Temps réel
     </div>
     <div id="statusText" class="status ok">Connecté</div>
   </div>
@@ -45,10 +46,10 @@
 </main>
 
 <footer>
-  Héberge ces fichiers sur GitHub Pages pour partager ton Kanban avec tout le monde.
+  Héberge ce site sur GitHub Pages pour partager ton Kanban à tout le monde.
 </footer>
 
-<!-- Menu de couleur flottant -->
+<!-- Menu couleur type Miro -->
 <div id="colorMenu" class="color-menu hidden">
   <div id="colorMenuTitle" class="color-menu-title">Couleur</div>
   <div id="colorMenuColors" class="color-menu-grid"></div>
@@ -58,7 +59,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
-<!-- Ton JS -->
+<!-- App -->
 <script src="app.js"></script>
 </body>
 </html>
