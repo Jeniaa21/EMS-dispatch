@@ -1,5 +1,4 @@
-// -------------------- Firebase --------------------
-
+// === Firebase config de ton projet ===
 const firebaseConfig = {
   apiKey: "AIzaSyBsHFp5MfmldTvcDkatE4P9gXNRZ1Ivk0o",
   authDomain: "ems-dispatch-d1cd2.firebaseapp.com",
@@ -13,11 +12,9 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// -------------------- DOM --------------------
-
+// === DOM ===
 const statusText = document.getElementById("statusText");
 const devToggle = document.getElementById("devToggle");
-const board = document.getElementById("board");
 
 const addTaskForm = document.getElementById("addTaskForm");
 const addColumnForm = document.getElementById("addColumnForm");
@@ -27,52 +24,23 @@ const taskBadgeInput = document.getElementById("taskBadge");
 const taskColumnSelect = document.getElementById("taskColumn");
 const taskSubSelect = document.getElementById("taskSubcategory");
 const columnNameInput = document.getElementById("columnName");
+const board = document.getElementById("board");
 
+// menu couleur
 const colorMenu = document.getElementById("colorMenu");
 const colorMenuTitle = document.getElementById("colorMenuTitle");
 const colorMenuColors = document.getElementById("colorMenuColors");
 
-// -------------------- État --------------------
-
+// === ÉTAT ===
 let devMode = false;
 let columns = [];
 let subcategories = [];
 let tasks = [];
 
+let hasInitializedColumns = false;
 let colorMenuCallback = null;
 
-// Heartbeat debounce
-let heartbeatReloadTimer = null;
-
-// -------------------- Utils --------------------
-
-function setStatus(msg, ok = true){
-  statusText.textContent = msg;
-  statusText.classList.toggle("ok", ok);
-  statusText.classList.toggle("err", !ok);
-}
-
-function formatDate(timestamp){
-  if(!timestamp) return "";
-  const date = timestamp.toDate();
-  return date.toLocaleString("fr-FR",{
-    day:"2-digit",
-    month:"2-digit",
-    hour:"2-digit",
-    minute:"2-digit"
-  });
-}
-
-function setDevMode(enabled){
-  devMode = enabled;
-  document.body.classList.toggle("dev-mode-on", enabled);
-}
-
-devToggle.addEventListener("change", e => {
-  setDevMode(e.target.checked);
-});
-
-// Palette de couleur (comme sur Miro)
+// palette type Miro
 const COLOR_PALETTE = [
   "#fde68a","#fbbf24","#d97706","#ffffff","#e5e7eb",
   "#fecaca","#f97373","#ef4444","#9ca3af","#6b7280",
@@ -81,104 +49,38 @@ const COLOR_PALETTE = [
   "#e9d5ff","#a855f7","#7c3aed","#facc15","#f97316"
 ];
 
-// Remplit le menu de couleurs
-COLOR_PALETTE.forEach(color => {
-  const btn = document.createElement("button");
-  btn.className = "color-swatch dev-only";
-  btn.style.background = color;
-  btn.addEventListener("click", () => {
-    if(!devMode) return;
-    if(colorMenuCallback) colorMenuCallback(color);
-    closeColorMenu();
-  });
-  colorMenuColors.appendChild(btn);
-});
+// === Helpers ===
 
-function openColorMenu(x,y,title,callback){
-  if(!devMode) return;
-  colorMenuTitle.textContent = title || "Couleur";
-  colorMenuCallback = callback;
-  colorMenu.style.left = x + "px";
-  colorMenu.style.top = y + "px";
-  colorMenu.classList.remove("hidden");
+function setStatus(msg, ok = true) {
+  statusText.textContent = msg;
+  statusText.classList.toggle("ok", ok);
+  statusText.classList.toggle("err", !ok);
 }
 
-function closeColorMenu(){
-  colorMenu.classList.add("hidden");
-  colorMenuCallback = null;
-}
-
-document.addEventListener("click", e => {
-  if(!colorMenu.contains(e.target)) closeColorMenu();
-});
-
-// Couleurs des cartes et tags
-
-function applyCardColor(card,color){
-  if(!color){
-    card.style.background = "#ffffff";
-    card.style.borderColor = "#e5e7eb";
-    card.style.boxShadow = "0 2px 6px rgba(15,23,42,0.12)";
-    card.style.color = "#111827";
-    card.querySelectorAll(".card-title").forEach(el=>el.style.color="#111827");
-    card.querySelectorAll(".card-desc").forEach(el=>el.style.color="#4b5563");
-    card.querySelectorAll(".card-meta").forEach(el=>el.style.color="#6b7280");
-    return;
-  }
-  card.style.background = color;
-  card.style.borderColor = color;
-  card.style.boxShadow = "0 2px 6px rgba(15,23,42,0.12)";
-  const r = parseInt(color.substr(1,2),16);
-  const g = parseInt(color.substr(3,2),16);
-  const b = parseInt(color.substr(5,2),16);
-  const lum = 0.299*r + 0.587*g + 0.114*b;
-  const text = lum < 140 ? "#f9fafb" : "#111827";
-  const secondary = lum < 140 ? "#e5e7eb" : "#374151";
-  card.style.color = text;
-  card.querySelectorAll(".card-title").forEach(el=>el.style.color=text);
-  card.querySelectorAll(".card-desc").forEach(el=>el.style.color=secondary);
-  card.querySelectorAll(".card-meta").forEach(el=>el.style.color=secondary);
-}
-
-function applyBadgeColor(tag,color){
-  if(!color){
-    tag.style.background = "";
-    tag.style.borderColor = "";
-    tag.style.color = "";
-    return;
-  }
-  const r = parseInt(color.substr(1,2),16);
-  const g = parseInt(color.substr(3,2),16);
-  const b = parseInt(color.substr(5,2),16);
-  const lum = 0.299*r + 0.587*g + 0.114*b;
-  const text = lum < 140 ? "#f9fafb" : "#111827";
-  tag.style.background = color;
-  tag.style.borderColor = color;
-  tag.style.color = text;
-}
-
-// -------------------- Heartbeat --------------------
-
-function touchHeartbeat(){
-  db.collection("meta").doc("heartbeat").set({
-    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-  }, { merge:true });
-}
-
-function listenHeartbeat(){
-  db.collection("meta").doc("heartbeat").onSnapshot(doc => {
-    if(!doc.exists) return;
-    if(heartbeatReloadTimer) clearTimeout(heartbeatReloadTimer);
-    heartbeatReloadTimer = setTimeout(() => {
-      loadAllData();
-      heartbeatReloadTimer = null;
-    }, 400);
+function formatDate(timestamp) {
+  if (!timestamp) return "";
+  const date = timestamp.toDate();
+  return date.toLocaleString("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
   });
 }
 
-// -------------------- Form selects --------------------
+function setDevMode(enabled) {
+  devMode = enabled;
+  document.body.classList.toggle("dev-mode-on", enabled);
+}
+setDevMode(false);
 
-function updateTaskSubSelect(){
+devToggle.addEventListener("change", () => {
+  setDevMode(devToggle.checked);
+});
+
+// === Selects pour ajout de carte ===
+
+function updateTaskSubSelect() {
   const colId = taskColumnSelect.value;
   taskSubSelect.innerHTML = "";
 
@@ -187,11 +89,11 @@ function updateTaskSubSelect(){
   optNone.textContent = "Sans sous-catégorie";
   taskSubSelect.appendChild(optNone);
 
-  if(!colId) return;
+  if (!colId) return;
 
   const subsForCol = subcategories
     .filter(s => s.columnId === colId)
-    .sort((a,b) => (a.order || 0) - (b.order || 0));
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
 
   subsForCol.forEach(sub => {
     const opt = document.createElement("option");
@@ -201,30 +103,111 @@ function updateTaskSubSelect(){
   });
 }
 
-function updateTaskColumnSelect(){
+function updateTaskColumnSelect() {
   const current = taskColumnSelect.value;
   taskColumnSelect.innerHTML = "";
-
   columns.forEach(col => {
     const opt = document.createElement("option");
     opt.value = col.id;
     opt.textContent = col.name;
     taskColumnSelect.appendChild(opt);
   });
-
-  if(columns.length){
+  if (columns.length) {
     const found = columns.find(c => c.id === current) || columns[0];
     taskColumnSelect.value = found.id;
   }
-
   updateTaskSubSelect();
 }
 
-taskColumnSelect.addEventListener("change", updateTaskSubSelect);
+taskColumnSelect?.addEventListener("change", updateTaskSubSelect);
 
-// -------------------- Création cartes --------------------
+// === Menu couleur ===
 
-function createCard(id,data,label,columnId,subId){
+COLOR_PALETTE.forEach(color => {
+  const btn = document.createElement("button");
+  btn.className = "color-swatch dev-only";
+  btn.style.background = color;
+  btn.addEventListener("click", () => {
+    if (!devMode) return;
+    if (colorMenuCallback) colorMenuCallback(color);
+    closeColorMenu();
+  });
+  colorMenuColors.appendChild(btn);
+});
+
+function openColorMenu(x, y, title, callback) {
+  if (!devMode) return;
+  colorMenuTitle.textContent = title || "Couleur";
+  colorMenuCallback = callback;
+  colorMenu.style.left = x + "px";
+  colorMenu.style.top = y + "px";
+  colorMenu.classList.remove("hidden");
+}
+
+function closeColorMenu() {
+  colorMenu.classList.add("hidden");
+  colorMenuCallback = null;
+}
+
+document.addEventListener("click", (e) => {
+  if (!colorMenu.contains(e.target)) {
+    closeColorMenu();
+  }
+});
+
+// === Couleurs cartes / badges ===
+
+function applyCardColor(card, color) {
+  if (!color) {
+    card.style.background = "#ffffff";
+    card.style.borderColor = "#e5e7eb";
+    card.style.boxShadow = "0 2px 6px rgba(15,23,42,0.12)";
+    card.style.color = "#111827";
+    card.querySelectorAll(".card-title").forEach(el => el.style.color = "#111827");
+    card.querySelectorAll(".card-desc").forEach(el => el.style.color = "#4b5563");
+    card.querySelectorAll(".card-meta").forEach(el => el.style.color = "#6b7280");
+    return;
+  }
+
+  card.style.background = color;
+  card.style.borderColor = color;
+  card.style.boxShadow = "0 2px 6px rgba(15,23,42,0.12)";
+
+  const r = parseInt(color.substr(1,2),16);
+  const g = parseInt(color.substr(3,2),16);
+  const b = parseInt(color.substr(5,2),16);
+  const luminance = 0.299*r + 0.587*g + 0.114*b;
+
+  const textColor = luminance < 140 ? "#f9fafb" : "#111827";
+  const secondary = luminance < 140 ? "#e5e7eb" : "#374151";
+
+  card.style.color = textColor;
+  card.querySelectorAll(".card-title").forEach(el => el.style.color = textColor);
+  card.querySelectorAll(".card-desc").forEach(el => el.style.color = secondary);
+  card.querySelectorAll(".card-meta").forEach(el => el.style.color = secondary);
+}
+
+function applyBadgeColor(tag, color) {
+  if (!color) {
+    tag.style.background = "";
+    tag.style.borderColor = "";
+    tag.style.color = "";
+    return;
+  }
+  const r = parseInt(color.substr(1,2),16);
+  const g = parseInt(color.substr(3,2),16);
+  const b = parseInt(color.substr(5,2),16);
+  const luminance = 0.299*r + 0.587*g + 0.114*b;
+  const textColor = luminance < 140 ? "#f9fafb" : "#111827";
+
+  tag.style.background = color;
+  tag.style.borderColor = color;
+  tag.style.color = textColor;
+}
+
+// === Cartes ===
+
+function createCard(id, data, label, columnId, subId) {
   const card = document.createElement("div");
   card.className = "card";
   card.draggable = true;
@@ -252,34 +235,34 @@ function createCard(id,data,label,columnId,subId){
   tag.className = "tag";
   tag.textContent = data.badgeLabel || label || "Sans libellé";
 
-  // Badge couleur
-  tag.addEventListener("click", e => {
-    if(!devMode) return;
+  // clic = couleur badge
+  tag.addEventListener("click", (e) => {
+    if (!devMode) return;
     e.stopPropagation();
     const rect = tag.getBoundingClientRect();
-    openColorMenu(rect.left, rect.bottom + 4, "Couleur du badge", async newColor => {
-      try{
-        await db.collection("tasks").doc(id).update({ badgeColor:newColor });
-        touchHeartbeat();
-      }catch(err){
+    openColorMenu(rect.left, rect.bottom + 4, "Couleur du badge", async (newColor) => {
+      try {
+        await db.collection("tasks").doc(id).update({ badgeColor: newColor });
+      } catch (err) {
         console.error(err);
-        alert("Erreur lors de la mise à jour du badge.");
+        alert("Erreur lors de la mise à jour de la couleur du badge.");
       }
     });
   });
 
-  // Badge texte
-  tag.addEventListener("dblclick", async e => {
-    if(!devMode) return;
+  // double clic = texte badge
+  tag.addEventListener("dblclick", async (e) => {
+    if (!devMode) return;
     e.stopPropagation();
     const currentText = data.badgeLabel || tag.textContent;
     const newText = prompt("Texte du badge :", currentText);
-    if(newText === null) return;
+    if (newText === null) return;
     const trimmed = newText.trim();
-    try{
-      await db.collection("tasks").doc(id).update({ badgeLabel: trimmed || null });
-      touchHeartbeat();
-    }catch(err){
+    try {
+      await db.collection("tasks").doc(id).update({
+        badgeLabel: trimmed || null
+      });
+    } catch (err) {
       console.error(err);
       alert("Erreur lors de la mise à jour du badge.");
     }
@@ -290,15 +273,14 @@ function createCard(id,data,label,columnId,subId){
   const colorBtn = document.createElement("button");
   colorBtn.className = "color-trigger small dev-only";
   colorBtn.style.background = data.color || "#22c55e";
-  colorBtn.addEventListener("click", e => {
-    if(!devMode) return;
+  colorBtn.addEventListener("click", (e) => {
+    if (!devMode) return;
     e.stopPropagation();
     const rect = colorBtn.getBoundingClientRect();
-    openColorMenu(rect.left, rect.bottom + 4, "Couleur de la carte", async newColor => {
-      try{
-        await db.collection("tasks").doc(id).update({ color:newColor });
-        touchHeartbeat();
-      }catch(err){
+    openColorMenu(rect.left, rect.bottom + 4, "Couleur de la carte", async (newColor) => {
+      try {
+        await db.collection("tasks").doc(id).update({ color: newColor });
+      } catch (err) {
         console.error(err);
         alert("Erreur lors de la mise à jour de la couleur de la carte.");
       }
@@ -315,145 +297,150 @@ function createCard(id,data,label,columnId,subId){
   meta.appendChild(date);
 
   card.appendChild(title);
-  if(data.description) card.appendChild(desc);
+  if (data.description) card.appendChild(desc);
   card.appendChild(meta);
 
   applyCardColor(card, data.color);
 
-  // Drag & drop cartes
-
-  card.addEventListener("dragstart", e => {
-    e.dataTransfer.setData("taskId", id);
+  // Drag cartes (avant / après)
+  card.addEventListener("dragstart", (e) => {
+    e.dataTransfer.setData("text/plain", id);
   });
 
-  card.addEventListener("dragover", e => {
+  card.addEventListener("dragover", (e) => {
     e.preventDefault();
     const rect = card.getBoundingClientRect();
     const offsetY = e.clientY - rect.top;
-    const pos = offsetY < rect.height/2 ? "before" : "after";
-    card.dataset.dropPosition = pos;
-    card.classList.toggle("card--drag-over-top", pos === "before");
-    card.classList.toggle("card--drag-over-bottom", pos === "after");
+    const position = offsetY < rect.height / 2 ? "before" : "after";
+    card.dataset.dropPosition = position;
+    card.classList.toggle("card--drag-over-top", position === "before");
+    card.classList.toggle("card--drag-over-bottom", position === "after");
   });
 
   card.addEventListener("dragleave", () => {
-    card.classList.remove("card--drag-over-top","card--drag-over-bottom");
+    card.classList.remove("card--drag-over-top", "card--drag-over-bottom");
     delete card.dataset.dropPosition;
   });
 
-  card.addEventListener("drop", async e => {
+  card.addEventListener("drop", async (e) => {
     e.preventDefault();
     e.stopPropagation();
-    card.classList.remove("card--drag-over-top","card--drag-over-bottom");
+    card.classList.remove("card--drag-over-top", "card--drag-over-bottom");
 
-    const draggedId = e.dataTransfer.getData("taskId");
-    if(!draggedId || draggedId === id) return;
+    const draggedId = e.dataTransfer.getData("text/plain");
+    if (!draggedId || draggedId === id) return;
 
     const destColumnId = columnId;
     const destSubId = subId || null;
     const draggedTask = tasks.find(t => t.id === draggedId);
-    if(!draggedTask) return;
+    if (!draggedTask) return;
 
     let destTasks = tasks
       .filter(t => t.columnId === destColumnId && (t.subcategoryId || null) === destSubId && t.id !== draggedId)
       .sort((a,b) => (a.order || 0) - (b.order || 0));
 
     const targetIndex = destTasks.findIndex(t => t.id === id);
-    if(targetIndex === -1) return;
+    if (targetIndex === -1) return;
 
     const position = card.dataset.dropPosition || "after";
     let insertIndex = position === "before" ? targetIndex : targetIndex + 1;
 
-    const movedClone = { ...draggedTask, columnId:destColumnId, subcategoryId:destSubId };
-    destTasks.splice(insertIndex,0,movedClone);
+    const draggedClone = { ...draggedTask, columnId: destColumnId, subcategoryId: destSubId };
+    destTasks.splice(insertIndex, 0, draggedClone);
 
     const batch = db.batch();
     destTasks.forEach((t, idx) => {
       const ref = db.collection("tasks").doc(t.id);
-      const dataUpdate = { order: idx };
-      if(t.id === draggedId){
-        dataUpdate.columnId = destColumnId;
-        dataUpdate.subcategoryId = destSubId;
+      const updateData = { order: idx };
+      if (t.id === draggedId) {
+        updateData.columnId = destColumnId;
+        updateData.subcategoryId = destSubId;
       }
-      batch.update(ref, dataUpdate);
+      batch.update(ref, updateData);
     });
 
-    try{
+    try {
       await batch.commit();
-      touchHeartbeat();
-    }catch(err){
+    } catch (err) {
       console.error(err);
-      alert("Erreur lors du déplacement.");
+      alert("Erreur lors du réordonnancement.");
     }
   });
 
-  // Supprimer carte
   card.addEventListener("dblclick", async () => {
-    if(!devMode) return;
-    if(!confirm("Supprimer cette carte ?")) return;
-    try{
-      await db.collection("tasks").doc(id).delete();
-      touchHeartbeat();
-    }catch(err){
-      console.error(err);
-      alert("Erreur lors de la suppression.");
+    if (!devMode) return;
+    if (confirm("Supprimer cette carte ?")) {
+      try {
+        await db.collection("tasks").doc(id).delete();
+      } catch (err) {
+        console.error(err);
+        alert("Erreur lors de la suppression.");
+      }
     }
   });
 
   return card;
 }
 
-// -------------------- Suppression colonnes & sous-cat --------------------
+// === Suppression colonnes / sous-catégories ===
 
-async function deleteColumnAndTasks(columnId,columnName){
-  if(!devMode) return;
-  if(!confirm(`Supprimer la catégorie "${columnName}" et toutes ses cartes ?`)) return;
-  try{
-    setStatus("Suppression de la catégorie...");
-    const tasksSnap = await db.collection("tasks").where("columnId","==",columnId).get();
-    const subsSnap = await db.collection("subcategories").where("columnId","==",columnId).get();
+async function deleteColumnAndTasks(columnId, columnName) {
+  if (!devMode) return;
+  const ok = confirm(`Supprimer la catégorie "${columnName}" et toutes ses cartes ?`);
+  if (!ok) return;
+
+  try {
+    setStatus("Suppression de la catégorie...", true);
+
+    const tasksSnap = await db.collection("tasks").where("columnId", "==", columnId).get();
+    const subsSnap  = await db.collection("subcategories").where("columnId", "==", columnId).get();
+
     const batch = db.batch();
     tasksSnap.forEach(doc => batch.delete(doc.ref));
     subsSnap.forEach(doc => batch.delete(doc.ref));
     batch.delete(db.collection("columns").doc(columnId));
     await batch.commit();
-    touchHeartbeat();
-    setStatus("Connecté",true);
-  }catch(err){
+
+    setStatus("Connecté", true);
+  } catch (err) {
     console.error(err);
-    setStatus("Erreur suppression catégorie",false);
+    setStatus("Erreur lors de la suppression de la catégorie", false);
     alert("Erreur lors de la suppression de la catégorie.");
   }
 }
 
-async function deleteSubcategoryAndMoveTasks(subId, subName){
-  if(!devMode) return;
-  if(!confirm(`Supprimer la sous-catégorie "${subName}" et renvoyer ses cartes dans "Sans sous-catégorie" ?`)) return;
-  try{
-    setStatus("Suppression de la sous-catégorie...");
-    const snap = await db.collection("tasks").where("subcategoryId","==",subId).get();
+async function deleteSubcategoryAndMoveTasks(subId, subName) {
+  if (!devMode) return;
+  const ok = confirm(`Supprimer la sous-catégorie "${subName}" et renvoyer ses cartes dans "Sans sous-catégorie" ?`);
+  if (!ok) return;
+
+  try {
+    setStatus("Suppression de la sous-catégorie...", true);
+    const snap = await db.collection("tasks").where("subcategoryId", "==", subId).get();
     const batch = db.batch();
-    snap.forEach(doc => batch.update(doc.ref,{ subcategoryId:null }));
+    snap.forEach(doc => {
+      batch.update(doc.ref, { subcategoryId: null });
+    });
     batch.delete(db.collection("subcategories").doc(subId));
     await batch.commit();
-    touchHeartbeat();
-    setStatus("Connecté",true);
-  }catch(err){
+    setStatus("Connecté", true);
+  } catch (err) {
     console.error(err);
-    setStatus("Erreur suppression sous-catégorie",false);
+    setStatus("Erreur lors de la suppression de la sous-catégorie", false);
     alert("Erreur lors de la suppression de la sous-catégorie.");
   }
 }
 
-// -------------------- Rendu complet du board --------------------
+// === Rendu du board ===
 
-function renderBoard(){
+function renderBoard() {
   board.innerHTML = "";
 
   columns.forEach(column => {
     const colArticle = document.createElement("article");
     colArticle.className = "column";
-    if(column.color){
+
+    if (column.color) {
       colArticle.style.borderColor = column.color;
       colArticle.style.boxShadow = "0 6px 14px rgba(15,23,42,0.12)";
     }
@@ -464,19 +451,18 @@ function renderBoard(){
     const headerLeft = document.createElement("div");
     headerLeft.style.display = "flex";
     headerLeft.style.alignItems = "center";
-    headerLeft.style.gap = ".35rem";
+    headerLeft.style.gap = "0.35rem";
 
     const titleSpan = document.createElement("span");
     titleSpan.className = "column-title";
     titleSpan.textContent = column.name;
 
-    // Renommer colonne
     titleSpan.addEventListener("dblclick", () => {
-      if(!devMode) return;
+      if (!devMode) return;
       const input = document.createElement("input");
       input.type = "text";
       input.value = column.name;
-      input.style.fontSize = ".9rem";
+      input.style.fontSize = "0.9rem";
       input.style.padding = "0.1rem 0.3rem";
       input.style.borderRadius = "0.5rem";
       input.style.border = "1px solid #9ca3af";
@@ -485,24 +471,23 @@ function renderBoard(){
       input.focus();
       input.select();
 
-      const finish = async save => {
+      const finish = async (save) => {
         const newName = input.value.trim();
-        headerLeft.replaceChild(titleSpan,input);
-        if(save && newName && newName !== column.name){
-          try{
-            await db.collection("columns").doc(column.id).update({ name:newName });
-            touchHeartbeat();
-          }catch(err){
+        headerLeft.replaceChild(titleSpan, input);
+        if (save && newName && newName !== column.name) {
+          try {
+            await db.collection("columns").doc(column.id).update({ name: newName });
+          } catch (err) {
             console.error(err);
-            alert("Erreur lors du renommage.");
+            alert("Erreur lors du renommage de la catégorie.");
           }
         }
       };
 
       input.addEventListener("blur", () => finish(true));
-      input.addEventListener("keydown", e => {
-        if(e.key === "Enter") finish(true);
-        if(e.key === "Escape") finish(false);
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") finish(true);
+        if (e.key === "Escape") finish(false);
       });
     });
 
@@ -518,17 +503,16 @@ function renderBoard(){
     const colColorBtn = document.createElement("button");
     colColorBtn.className = "color-trigger dev-only";
     colColorBtn.style.background = column.color || "#22c55e";
-    colColorBtn.addEventListener("click", e => {
-      if(!devMode) return;
+    colColorBtn.addEventListener("click", (e) => {
+      if (!devMode) return;
       e.stopPropagation();
       const rect = colColorBtn.getBoundingClientRect();
-      openColorMenu(rect.left, rect.bottom + 4, "Couleur de la colonne", async newColor => {
-        try{
-          await db.collection("columns").doc(column.id).update({ color:newColor });
-          touchHeartbeat();
-        }catch(err){
+      openColorMenu(rect.left, rect.bottom + 4, "Couleur de la colonne", async (newColor) => {
+        try {
+          await db.collection("columns").doc(column.id).update({ color: newColor });
+        } catch (err) {
           console.error(err);
-          alert("Erreur lors du changement de couleur.");
+          alert("Erreur lors de la mise à jour de la couleur de la colonne.");
         }
       });
     });
@@ -538,10 +522,10 @@ function renderBoard(){
     addSubBtn.title = "Ajouter une sous-catégorie";
     addSubBtn.textContent = "+";
     addSubBtn.addEventListener("click", async () => {
-      if(!devMode) return;
+      if (!devMode) return;
       const name = prompt("Nom de la nouvelle sous-catégorie :");
-      if(!name) return;
-      try{
+      if (!name) return;
+      try {
         const currentSubs = subcategories.filter(s => s.columnId === column.id);
         const order = currentSubs.length
           ? Math.max(...currentSubs.map(s => s.order || 0)) + 1
@@ -552,8 +536,7 @@ function renderBoard(){
           order,
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
-        touchHeartbeat();
-      }catch(err){
+      } catch (err) {
         console.error(err);
         alert("Erreur lors de l'ajout de la sous-catégorie.");
       }
@@ -582,10 +565,9 @@ function renderBoard(){
 
     const subsForCol = subcategories
       .filter(s => s.columnId === column.id)
-      .sort((a,b) => (a.order || 0) - (b.order || 0));
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
 
-    // ---- Bloc "Sans sous-catégorie" ----
-
+    // --- Sans sous-catégorie ---
     const noSubTasks = tasksForColumn.filter(t => !t.subcategoryId);
     const noSubBlock = document.createElement("div");
     noSubBlock.className = "subcategory subcategory--none";
@@ -614,36 +596,35 @@ function renderBoard(){
       .sort((a,b) => (a.order || 0) - (b.order || 0))
       .forEach(item => {
         const label = column.name;
-        const card = createCard(item.id,item,label,column.id,null);
+        const card = createCard(item.id, item, label, column.id, null);
         noSubBody.appendChild(card);
       });
 
-    noSubBody.addEventListener("dragover", e => {
+    noSubBody.addEventListener("dragover", (e) => {
       e.preventDefault();
       noSubBody.classList.add("subcategory-body--hover");
     });
     noSubBody.addEventListener("dragleave", () => {
       noSubBody.classList.remove("subcategory-body--hover");
     });
-    noSubBody.addEventListener("drop", async e => {
+    noSubBody.addEventListener("drop", async (e) => {
       e.preventDefault();
       noSubBody.classList.remove("subcategory-body--hover");
-      const id = e.dataTransfer.getData("taskId");
-      if(!id) return;
-      try{
+      const id = e.dataTransfer.getData("text/plain");
+      if (!id) return;
+      try {
         const destTasks = tasks
           .filter(t => t.columnId === column.id && !t.subcategoryId && t.id !== id)
           .sort((a,b) => (a.order || 0) - (b.order || 0));
-        const newOrder = destTasks.length ? (destTasks[destTasks.length-1].order || 0) + 1 : 0;
+        const newOrder = destTasks.length ? destTasks[destTasks.length-1].order + 1 : 0;
         await db.collection("tasks").doc(id).update({
           columnId: column.id,
           subcategoryId: null,
           order: newOrder
         });
-        touchHeartbeat();
-      }catch(err){
+      } catch (err) {
         console.error(err);
-        alert("Erreur lors du déplacement.");
+        alert("Erreur lors du déplacement de la carte.");
       }
     });
 
@@ -651,18 +632,20 @@ function renderBoard(){
     noSubBlock.appendChild(noSubBody);
     body.appendChild(noSubBlock);
 
-    // ---- Sous-catégories avec drag & drop ----
-
+    // --- Sous-catégories ---
     subsForCol.forEach(sub => {
       const subBlock = document.createElement("div");
       subBlock.className = "subcategory";
-      subBlock.draggable = devMode; // drag seulement en mode dev
       subBlock.dataset.subId = sub.id;
+      subBlock.dataset.columnId = column.id;
 
-      if(sub.color){
+      if (sub.color) {
         subBlock.style.borderColor = sub.color;
         subBlock.style.boxShadow = "0 2px 6px rgba(15,23,42,0.08)";
       }
+
+      // rendre draggable (dev seulement)
+      subBlock.draggable = devMode;
 
       const subHeader = document.createElement("div");
       subHeader.className = "subcategory-header";
@@ -670,18 +653,18 @@ function renderBoard(){
       const subHeaderLeft = document.createElement("div");
       subHeaderLeft.style.display = "flex";
       subHeaderLeft.style.alignItems = "center";
-      subHeaderLeft.style.gap = ".25rem";
+      subHeaderLeft.style.gap = "0.25rem";
 
       const subTitle = document.createElement("span");
       subTitle.className = "subcategory-title";
       subTitle.textContent = sub.name;
 
       subTitle.addEventListener("dblclick", () => {
-        if(!devMode) return;
+        if (!devMode) return;
         const input = document.createElement("input");
         input.type = "text";
         input.value = sub.name;
-        input.style.fontSize = ".8rem";
+        input.style.fontSize = "0.8rem";
         input.style.padding = "0.05rem 0.3rem";
         input.style.borderRadius = "0.4rem";
         input.style.border = "1px solid #9ca3af";
@@ -690,14 +673,13 @@ function renderBoard(){
         input.focus();
         input.select();
 
-        const finish = async save => {
+        const finish = async (save) => {
           const newName = input.value.trim();
-          subHeaderLeft.replaceChild(subTitle,input);
-          if(save && newName && newName !== sub.name){
-            try{
-              await db.collection("subcategories").doc(sub.id).update({ name:newName });
-              touchHeartbeat();
-            }catch(err){
+          subHeaderLeft.replaceChild(subTitle, input);
+          if (save && newName && newName !== sub.name) {
+            try {
+              await db.collection("subcategories").doc(sub.id).update({ name: newName });
+            } catch (err) {
               console.error(err);
               alert("Erreur lors du renommage de la sous-catégorie.");
             }
@@ -705,9 +687,9 @@ function renderBoard(){
         };
 
         input.addEventListener("blur", () => finish(true));
-        input.addEventListener("keydown", e => {
-          if(e.key==="Enter") finish(true);
-          if(e.key==="Escape") finish(false);
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") finish(true);
+          if (e.key === "Escape") finish(false);
         });
       });
 
@@ -720,22 +702,21 @@ function renderBoard(){
       const subActions = document.createElement("div");
       subActions.style.display = "flex";
       subActions.style.alignItems = "center";
-      subActions.style.gap = ".2rem";
+      subActions.style.gap = "0.2rem";
 
       const subColorBtn = document.createElement("button");
       subColorBtn.className = "color-trigger small dev-only";
       subColorBtn.style.background = sub.color || "#22c55e";
-      subColorBtn.addEventListener("click", e => {
-        if(!devMode) return;
+      subColorBtn.addEventListener("click", (e) => {
+        if (!devMode) return;
         e.stopPropagation();
         const rect = subColorBtn.getBoundingClientRect();
-        openColorMenu(rect.left, rect.bottom + 4, "Couleur de la sous-catégorie", async newColor => {
-          try{
-            await db.collection("subcategories").doc(sub.id).update({ color:newColor });
-            touchHeartbeat();
-          }catch(err){
+        openColorMenu(rect.left, rect.bottom + 4, "Couleur de la sous-catégorie", async (newColor) => {
+          try {
+            await db.collection("subcategories").doc(sub.id).update({ color: newColor });
+          } catch (err) {
             console.error(err);
-            alert("Erreur lors du changement de couleur.");
+            alert("Erreur lors de la mise à jour de la couleur de la sous-catégorie.");
           }
         });
       });
@@ -766,99 +747,110 @@ function renderBoard(){
 
       tasksForSub.forEach(item => {
         const label = sub.name;
-        const card = createCard(item.id,item,label,column.id,sub.id);
+        const card = createCard(item.id, item, label, column.id, sub.id);
         subBody.appendChild(card);
       });
 
-      subBody.addEventListener("dragover", e => {
+      subBody.addEventListener("dragover", (e) => {
         e.preventDefault();
         subBody.classList.add("subcategory-body--hover");
       });
       subBody.addEventListener("dragleave", () => {
         subBody.classList.remove("subcategory-body--hover");
       });
-      subBody.addEventListener("drop", async e => {
+      subBody.addEventListener("drop", async (e) => {
         e.preventDefault();
         subBody.classList.remove("subcategory-body--hover");
-        const id = e.dataTransfer.getData("taskId");
-        if(!id) return;
-        try{
+        const id = e.dataTransfer.getData("text/plain");
+        if (!id) return;
+        try {
           const destTasks = tasks
             .filter(t => t.columnId === column.id && t.subcategoryId === sub.id && t.id !== id)
             .sort((a,b) => (a.order || 0) - (b.order || 0));
-          const newOrder = destTasks.length ? (destTasks[destTasks.length-1].order || 0) + 1 : 0;
+          const newOrder = destTasks.length ? destTasks[destTasks.length-1].order + 1 : 0;
           await db.collection("tasks").doc(id).update({
             columnId: column.id,
             subcategoryId: sub.id,
             order: newOrder
           });
-          touchHeartbeat();
-        }catch(err){
+        } catch (err) {
           console.error(err);
-          alert("Erreur lors du déplacement.");
+          alert("Erreur lors du déplacement de la carte.");
         }
       });
 
-      // Drag & drop des sous-catégories (devMode uniquement)
-      if(devMode){
-        subBlock.addEventListener("dragstart", e => {
-          e.dataTransfer.setData("subId", sub.id);
-          subBlock.classList.add("dragging-sub");
-        });
-        subBlock.addEventListener("dragend", () => {
-          subBlock.classList.remove("dragging-sub");
-        });
-        subBlock.addEventListener("dragover", e => {
-          if(!devMode) return;
+      // ---- DRAG & DROP DES SOUS-CATÉGORIES (mode dev) ----
+      subBlock.addEventListener("dragstart", (e) => {
+        if (!devMode) {
           e.preventDefault();
-          const rect = subBlock.getBoundingClientRect();
-          const offsetY = e.clientY - rect.top;
-          if(offsetY < rect.height/2){
-            subBlock.classList.add("sub-drop-top");
-            subBlock.classList.remove("sub-drop-bottom");
-          }else{
-            subBlock.classList.add("sub-drop-bottom");
-            subBlock.classList.remove("sub-drop-top");
-          }
+          return;
+        }
+        e.dataTransfer.setData("subId", sub.id);
+        subBlock.classList.add("dragging-sub");
+      });
+
+      subBlock.addEventListener("dragend", () => {
+        subBlock.classList.remove("dragging-sub");
+        subBlock.classList.remove("sub-drop-top", "sub-drop-bottom");
+      });
+
+      subBlock.addEventListener("dragover", (e) => {
+        if (!devMode) return;
+        const draggedSubId = e.dataTransfer.getData("subId");
+        if (!draggedSubId) return;
+        e.preventDefault();
+        const rect = subBlock.getBoundingClientRect();
+        const offsetY = e.clientY - rect.top;
+        if (offsetY < rect.height / 2) {
+          subBlock.classList.add("sub-drop-top");
+          subBlock.classList.remove("sub-drop-bottom");
+        } else {
+          subBlock.classList.add("sub-drop-bottom");
+          subBlock.classList.remove("sub-drop-top");
+        }
+      });
+
+      subBlock.addEventListener("dragleave", () => {
+        subBlock.classList.remove("sub-drop-top", "sub-drop-bottom");
+      });
+
+      subBlock.addEventListener("drop", async (e) => {
+        if (!devMode) return;
+        e.preventDefault();
+        const draggedSubId = e.dataTransfer.getData("subId");
+        if (!draggedSubId || draggedSubId === sub.id) return;
+
+        // réordonner seulement dans la même colonne
+        let siblings = subcategories
+          .filter(s => s.columnId === column.id)
+          .sort((a,b) => (a.order || 0) - (b.order || 0));
+
+        const fromIndex = siblings.findIndex(s => s.id === draggedSubId);
+        const toIndex = siblings.findIndex(s => s.id === sub.id);
+        if (fromIndex === -1 || toIndex === -1) return;
+
+        let insertAt = toIndex;
+        if (subBlock.classList.contains("sub-drop-bottom")) insertAt++;
+
+        const moved = siblings.splice(fromIndex, 1)[0];
+        siblings.splice(insertAt, 0, moved);
+
+        const batch = db.batch();
+        siblings.forEach((s, i) => {
+          batch.update(db.collection("subcategories").doc(s.id), { order: i });
         });
-        subBlock.addEventListener("dragleave", () => {
-          subBlock.classList.remove("sub-drop-top","sub-drop-bottom");
-        });
-        subBlock.addEventListener("drop", async e => {
-          if(!devMode) return;
-          e.preventDefault();
-          const draggedSubId = e.dataTransfer.getData("subId");
-          subBlock.classList.remove("sub-drop-top","sub-drop-bottom");
-          if(!draggedSubId || draggedSubId === sub.id) return;
 
-          let siblings = subcategories
-            .filter(s => s.columnId === column.id)
-            .sort((a,b) => (a.order || 0) - (b.order || 0));
+        try {
+          await batch.commit();
+        } catch (err) {
+          console.error(err);
+          alert("Erreur lors du déplacement de la sous-catégorie.");
+        }
 
-          const fromIndex = siblings.findIndex(s => s.id === draggedSubId);
-          const toIndex = siblings.findIndex(s => s.id === sub.id);
-          if(fromIndex === -1 || toIndex === -1) return;
+        subBlock.classList.remove("sub-drop-top", "sub-drop-bottom");
+      });
 
-          let insertAt = toIndex;
-          if(subBlock.classList.contains("sub-drop-bottom")) insertAt++;
-
-          const moved = siblings.splice(fromIndex,1)[0];
-          siblings.splice(insertAt,0,moved);
-
-          const batch = db.batch();
-          siblings.forEach((s,i) => {
-            batch.update(db.collection("subcategories").doc(s.id),{ order:i });
-          });
-
-          try{
-            await batch.commit();
-            touchHeartbeat();
-          }catch(err){
-            console.error(err);
-            alert("Erreur lors du déplacement de la sous-catégorie.");
-          }
-        });
-      }
+      // ---- fin drag sous-catégories ----
 
       subBlock.appendChild(subHeader);
       subBlock.appendChild(subBody);
@@ -873,63 +865,92 @@ function renderBoard(){
   updateTaskColumnSelect();
 }
 
-// -------------------- Chargement des données --------------------
+// === Initialisation colonnes par défaut ===
 
-async function loadAllData(){
-  try{
-    setStatus("Chargement...");
-    const [colSnap, subSnap, taskSnap] = await Promise.all([
-      db.collection("columns").orderBy("order","asc").get(),
-      db.collection("subcategories").orderBy("order","asc").get(),
-      db.collection("tasks").orderBy("order","asc").get()
-    ]);
-    columns = colSnap.docs.map(d => ({ id:d.id, ...d.data() }));
-    subcategories = subSnap.docs.map(d => ({ id:d.id, ...d.data() }));
-    tasks = taskSnap.docs.map(d => ({ id:d.id, ...d.data() }));
-    renderBoard();
-    setStatus("Connecté",true);
-  }catch(err){
-    console.error(err);
-    setStatus("Erreur de chargement",false);
-  }
-}
-
-// -------------------- Création par défaut de 3 colonnes (au besoin) --------------------
-
-async function createDefaultColumnsIfEmpty(){
-  const snap = await db.collection("columns").limit(1).get();
-  if(!snap.empty) return;
-  const names = ["À faire","En cours","Terminé"];
+async function createDefaultColumns() {
+  const names = ["À faire", "En cours", "Terminé"];
   const batch = db.batch();
-  names.forEach((name,idx) => {
-    const ref = db.collection("columns").doc();
-    batch.set(ref,{
+  const colsRef = db.collection("columns");
+  names.forEach((name, index) => {
+    const ref = colsRef.doc();
+    batch.set(ref, {
       name,
-      order:idx,
+      order: index,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
   });
   await batch.commit();
-  touchHeartbeat();
 }
 
-// -------------------- Form events --------------------
+// === LISTENERS FIRESTORE ===
 
-addTaskForm.addEventListener("submit", async e => {
+db.collection("columns")
+  .orderBy("order", "asc")
+  .onSnapshot(async (snapshot) => {
+    setStatus("Connecté");
+    if (!hasInitializedColumns && snapshot.empty) {
+      hasInitializedColumns = true;
+      await createDefaultColumns();
+      return;
+    }
+    hasInitializedColumns = true;
+    columns = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    renderBoard();
+  }, (error) => {
+    console.error(error);
+    setStatus("Erreur de connexion aux catégories", false);
+  });
+
+db.collection("subcategories")
+  .orderBy("order", "asc")
+  .onSnapshot((snapshot) => {
+    setStatus("Connecté");
+    subcategories = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    renderBoard();
+  }, (error) => {
+    console.error(error);
+    setStatus("Erreur de connexion aux sous-catégories", false);
+  });
+
+db.collection("tasks")
+  .orderBy("order", "asc")
+  .onSnapshot((snapshot) => {
+    setStatus("Connecté");
+    tasks = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    renderBoard();
+  }, (error) => {
+    console.error(error);
+    setStatus("Erreur de connexion aux tâches", false);
+  });
+
+// === FORMULAIRES ===
+
+addTaskForm.addEventListener("submit", async (e) => {
   e.preventDefault();
-  if(!devMode) return;
+  if (!devMode) return;
+
   const title = taskTitleInput.value.trim();
   const description = taskDescInput.value.trim();
   const badgeLabel = taskBadgeInput.value.trim() || null;
   const columnId = taskColumnSelect.value;
   const subId = taskSubSelect.value || null;
-  if(!title || !columnId) return;
 
-  try{
+  if (!title || !columnId) return;
+
+  try {
     const existing = tasks
       .filter(t => t.columnId === columnId && (t.subcategoryId || null) === (subId || null))
       .sort((a,b) => (a.order || 0) - (b.order || 0));
-    const order = existing.length ? (existing[existing.length-1].order || 0) + 1 : 0;
+    const order = existing.length ? existing[existing.length-1].order + 1 : 0;
 
     await db.collection("tasks").add({
       title,
@@ -940,41 +961,32 @@ addTaskForm.addEventListener("submit", async e => {
       order,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
-    touchHeartbeat();
     taskTitleInput.value = "";
     taskDescInput.value = "";
     taskBadgeInput.value = "";
-  }catch(err){
+  } catch (err) {
     console.error(err);
-    alert("Erreur lors de l'ajout de la carte.");
+    alert("Erreur lors de l'ajout de la tâche.");
   }
 });
 
-addColumnForm.addEventListener("submit", async e => {
+addColumnForm.addEventListener("submit", async (e) => {
   e.preventDefault();
-  if(!devMode) return;
+  if (!devMode) return;
+
   const name = columnNameInput.value.trim();
-  if(!name) return;
-  try{
+  if (!name) return;
+
+  try {
     const order = columns.length ? Math.max(...columns.map(c => c.order || 0)) + 1 : 0;
     await db.collection("columns").add({
       name,
       order,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
-    touchHeartbeat();
     columnNameInput.value = "";
-  }catch(err){
+  } catch (err) {
     console.error(err);
     alert("Erreur lors de l'ajout de la catégorie.");
   }
 });
-
-// -------------------- Init --------------------
-
-(async function init(){
-  setDevMode(false);           // mode dev OFF par défaut
-  await createDefaultColumnsIfEmpty();
-  listenHeartbeat();           // écoute le heartbeat
-  await loadAllData();         // premier chargement
-})();
