@@ -1,4 +1,6 @@
-// === Firebase config de ton projet ===
+// =========================
+//  Firebase
+// =========================
 const firebaseConfig = {
   apiKey: "AIzaSyBsHFp5MfmldTvcDkatE4P9gXNRZ1Ivk0o",
   authDomain: "ems-dispatch-d1cd2.firebaseapp.com",
@@ -12,35 +14,28 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// === DOM ===
-const statusText = document.getElementById("statusText");
-const devToggle = document.getElementById("devToggle");
-
-const addTaskForm = document.getElementById("addTaskForm");
-const addColumnForm = document.getElementById("addColumnForm");
-const taskTitleInput = document.getElementById("taskTitle");
-const taskDescInput = document.getElementById("taskDesc");
-const taskBadgeInput = document.getElementById("taskBadge");
+// =========================
+//  Références DOM
+// =========================
+const statusText       = document.getElementById("statusText");
+const addTaskForm      = document.getElementById("addTaskForm");
+const addColumnForm    = document.getElementById("addColumnForm");
+const taskTitleInput   = document.getElementById("taskTitle");
+const taskDescInput    = document.getElementById("taskDesc");
+const taskBadgeInput   = document.getElementById("taskBadge");
 const taskColumnSelect = document.getElementById("taskColumn");
-const taskSubSelect = document.getElementById("taskSubcategory");
-const columnNameInput = document.getElementById("columnName");
-const board = document.getElementById("board");
+const taskSubSelect    = document.getElementById("taskSubcategory");
+const columnNameInput  = document.getElementById("columnName");
+const board            = document.getElementById("board");
+const devToggle        = document.getElementById("devToggle");
 
-// menu couleur
-const colorMenu = document.getElementById("colorMenu");
-const colorMenuTitle = document.getElementById("colorMenuTitle");
-const colorMenuColors = document.getElementById("colorMenuColors");
+const colorMenu        = document.getElementById("colorMenu");
+const colorMenuTitle   = document.getElementById("colorMenuTitle");
+const colorMenuColors  = document.getElementById("colorMenuColors");
 
-// === ÉTAT ===
-let devMode = false;
-let columns = [];
-let subcategories = [];
-let tasks = [];
-
-let hasInitializedColumns = false;
-let colorMenuCallback = null;
-
-// palette type Miro
+// =========================
+//  État global
+// =========================
 const COLOR_PALETTE = [
   "#fde68a","#fbbf24","#d97706","#ffffff","#e5e7eb",
   "#fecaca","#f97373","#ef4444","#9ca3af","#6b7280",
@@ -49,9 +44,28 @@ const COLOR_PALETTE = [
   "#e9d5ff","#a855f7","#7c3aed","#facc15","#f97316"
 ];
 
-// === Helpers ===
+let columns = [];
+let subcategories = [];
+let tasks = [];
+let hasInitializedColumns = false;
+
+let colorMenuCallback = null;
+let devMode = false;
+
+// =========================
+//  Utilitaires
+// =========================
+function setDevMode(enabled) {
+  devMode = enabled;
+  document.body.classList.toggle("dev-mode-on", enabled);
+}
+
+devToggle.addEventListener("change", () => {
+  setDevMode(devToggle.checked);
+});
 
 function setStatus(msg, ok = true) {
+  if (!statusText) return;
   statusText.textContent = msg;
   statusText.classList.toggle("ok", ok);
   statusText.classList.toggle("err", !ok);
@@ -68,19 +82,11 @@ function formatDate(timestamp) {
   });
 }
 
-function setDevMode(enabled) {
-  devMode = enabled;
-  document.body.classList.toggle("dev-mode-on", enabled);
-}
-setDevMode(false);
-
-devToggle.addEventListener("change", () => {
-  setDevMode(devToggle.checked);
-});
-
-// === Selects pour ajout de carte ===
-
+// =========================
+//  Sélecteurs de création
+// =========================
 function updateTaskSubSelect() {
+  if (!taskSubSelect || !taskColumnSelect) return;
   const colId = taskColumnSelect.value;
   taskSubSelect.innerHTML = "";
 
@@ -104,6 +110,7 @@ function updateTaskSubSelect() {
 }
 
 function updateTaskColumnSelect() {
+  if (!taskColumnSelect) return;
   const current = taskColumnSelect.value;
   taskColumnSelect.innerHTML = "";
   columns.forEach(col => {
@@ -119,10 +126,13 @@ function updateTaskColumnSelect() {
   updateTaskSubSelect();
 }
 
-taskColumnSelect?.addEventListener("change", updateTaskSubSelect);
+if (taskColumnSelect) {
+  taskColumnSelect.addEventListener("change", updateTaskSubSelect);
+}
 
-// === Menu couleur ===
-
+// =========================
+//  Menu couleur
+// =========================
 COLOR_PALETTE.forEach(color => {
   const btn = document.createElement("button");
   btn.className = "color-swatch dev-only";
@@ -155,8 +165,9 @@ document.addEventListener("click", (e) => {
   }
 });
 
-// === Couleurs cartes / badges ===
-
+// =========================
+//  Couleurs carte / badge
+// =========================
 function applyCardColor(card, color) {
   if (!color) {
     card.style.background = "#ffffff";
@@ -205,8 +216,9 @@ function applyBadgeColor(tag, color) {
   tag.style.color = textColor;
 }
 
-// === Cartes ===
-
+// =========================
+//  Carte (task) UI
+// =========================
 function createCard(id, data, label, columnId, subId) {
   const card = document.createElement("div");
   card.className = "card";
@@ -235,7 +247,7 @@ function createCard(id, data, label, columnId, subId) {
   tag.className = "tag";
   tag.textContent = data.badgeLabel || label || "Sans libellé";
 
-  // clic = couleur badge
+  // Couleur du badge (mode dev uniquement)
   tag.addEventListener("click", (e) => {
     if (!devMode) return;
     e.stopPropagation();
@@ -250,7 +262,7 @@ function createCard(id, data, label, columnId, subId) {
     });
   });
 
-  // double clic = texte badge
+  // Renommage badge (mode dev uniquement)
   tag.addEventListener("dblclick", async (e) => {
     if (!devMode) return;
     e.stopPropagation();
@@ -302,8 +314,9 @@ function createCard(id, data, label, columnId, subId) {
 
   applyCardColor(card, data.color);
 
-  // Drag cartes (avant / après)
+  // Drag & drop carte
   card.addEventListener("dragstart", (e) => {
+    e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", id);
   });
 
@@ -367,6 +380,7 @@ function createCard(id, data, label, columnId, subId) {
     }
   });
 
+  // Suppression carte (mode dev uniquement)
   card.addEventListener("dblclick", async () => {
     if (!devMode) return;
     if (confirm("Supprimer cette carte ?")) {
@@ -382,8 +396,9 @@ function createCard(id, data, label, columnId, subId) {
   return card;
 }
 
-// === Suppression colonnes / sous-catégories ===
-
+// =========================
+//  Suppression colonne / sous-catégorie
+// =========================
 async function deleteColumnAndTasks(columnId, columnName) {
   if (!devMode) return;
   const ok = confirm(`Supprimer la catégorie "${columnName}" et toutes ses cartes ?`);
@@ -431,9 +446,11 @@ async function deleteSubcategoryAndMoveTasks(subId, subName) {
   }
 }
 
-// === Rendu du board ===
-
+// =========================
+//  Rendu du board
+// =========================
 function renderBoard() {
+  if (!board) return;
   board.innerHTML = "";
 
   columns.forEach(column => {
@@ -457,6 +474,7 @@ function renderBoard() {
     titleSpan.className = "column-title";
     titleSpan.textContent = column.name;
 
+    // Renommage colonne (dev)
     titleSpan.addEventListener("dblclick", () => {
       if (!devMode) return;
       const input = document.createElement("input");
@@ -567,7 +585,7 @@ function renderBoard() {
       .filter(s => s.columnId === column.id)
       .sort((a, b) => (a.order || 0) - (b.order || 0));
 
-    // --- Sans sous-catégorie ---
+    // ----- Bloc "Sans sous-catégorie" -----
     const noSubTasks = tasksForColumn.filter(t => !t.subcategoryId);
     const noSubBlock = document.createElement("div");
     noSubBlock.className = "subcategory subcategory--none";
@@ -632,20 +650,17 @@ function renderBoard() {
     noSubBlock.appendChild(noSubBody);
     body.appendChild(noSubBlock);
 
-    // --- Sous-catégories ---
+    // ----- Sous-catégories -----
     subsForCol.forEach(sub => {
       const subBlock = document.createElement("div");
       subBlock.className = "subcategory";
       subBlock.dataset.subId = sub.id;
-      subBlock.dataset.columnId = column.id;
+      subBlock.draggable = true; // <-- pour permettre le drag de sous-catégorie
 
       if (sub.color) {
         subBlock.style.borderColor = sub.color;
         subBlock.style.boxShadow = "0 2px 6px rgba(15,23,42,0.08)";
       }
-
-      // rendre draggable (dev seulement)
-      subBlock.draggable = devMode;
 
       const subHeader = document.createElement("div");
       subHeader.className = "subcategory-header";
@@ -659,6 +674,7 @@ function renderBoard() {
       subTitle.className = "subcategory-title";
       subTitle.textContent = sub.name;
 
+      // Renommage sous-catégorie (dev)
       subTitle.addEventListener("dblclick", () => {
         if (!devMode) return;
         const input = document.createElement("input");
@@ -751,6 +767,7 @@ function renderBoard() {
         subBody.appendChild(card);
       });
 
+      // Drop cartes dans la sous-catégorie
       subBody.addEventListener("dragover", (e) => {
         e.preventDefault();
         subBody.classList.add("subcategory-body--hover");
@@ -779,13 +796,14 @@ function renderBoard() {
         }
       });
 
-      // ---- DRAG & DROP DES SOUS-CATÉGORIES (mode dev) ----
+      // ------ DRAG & DROP DES SOUS-CATÉGORIES (mode dev) ------
       subBlock.addEventListener("dragstart", (e) => {
         if (!devMode) {
           e.preventDefault();
           return;
         }
-        e.dataTransfer.setData("subId", sub.id);
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/subcategory-id", sub.id);
         subBlock.classList.add("dragging-sub");
       });
 
@@ -796,11 +814,13 @@ function renderBoard() {
 
       subBlock.addEventListener("dragover", (e) => {
         if (!devMode) return;
-        const draggedSubId = e.dataTransfer.getData("subId");
+        const draggedSubId = e.dataTransfer.getData("text/subcategory-id");
         if (!draggedSubId) return;
         e.preventDefault();
+
         const rect = subBlock.getBoundingClientRect();
         const offsetY = e.clientY - rect.top;
+
         if (offsetY < rect.height / 2) {
           subBlock.classList.add("sub-drop-top");
           subBlock.classList.remove("sub-drop-bottom");
@@ -817,22 +837,25 @@ function renderBoard() {
       subBlock.addEventListener("drop", async (e) => {
         if (!devMode) return;
         e.preventDefault();
-        const draggedSubId = e.dataTransfer.getData("subId");
+        const draggedSubId = e.dataTransfer.getData("text/subcategory-id");
+        subBlock.classList.remove("sub-drop-top", "sub-drop-bottom");
         if (!draggedSubId || draggedSubId === sub.id) return;
 
-        // réordonner seulement dans la même colonne
+        // Sous-catégories de la même colonne
         let siblings = subcategories
           .filter(s => s.columnId === column.id)
           .sort((a,b) => (a.order || 0) - (b.order || 0));
 
         const fromIndex = siblings.findIndex(s => s.id === draggedSubId);
-        const toIndex = siblings.findIndex(s => s.id === sub.id);
+        const toIndex   = siblings.findIndex(s => s.id === sub.id);
         if (fromIndex === -1 || toIndex === -1) return;
 
         let insertAt = toIndex;
-        if (subBlock.classList.contains("sub-drop-bottom")) insertAt++;
+        if (subBlock.classList.contains("sub-drop-bottom")) {
+          insertAt = toIndex + 1;
+        }
 
-        const moved = siblings.splice(fromIndex, 1)[0];
+        const [moved] = siblings.splice(fromIndex, 1);
         siblings.splice(insertAt, 0, moved);
 
         const batch = db.batch();
@@ -846,11 +869,8 @@ function renderBoard() {
           console.error(err);
           alert("Erreur lors du déplacement de la sous-catégorie.");
         }
-
-        subBlock.classList.remove("sub-drop-top", "sub-drop-bottom");
       });
-
-      // ---- fin drag sous-catégories ----
+      // --------------------------------------------------------
 
       subBlock.appendChild(subHeader);
       subBlock.appendChild(subBody);
@@ -865,8 +885,9 @@ function renderBoard() {
   updateTaskColumnSelect();
 }
 
-// === Initialisation colonnes par défaut ===
-
+// =========================
+//  Initialisation données
+// =========================
 async function createDefaultColumns() {
   const names = ["À faire", "En cours", "Terminé"];
   const batch = db.batch();
@@ -882,8 +903,7 @@ async function createDefaultColumns() {
   await batch.commit();
 }
 
-// === LISTENERS FIRESTORE ===
-
+// Columns
 db.collection("columns")
   .orderBy("order", "asc")
   .onSnapshot(async (snapshot) => {
@@ -904,6 +924,7 @@ db.collection("columns")
     setStatus("Erreur de connexion aux catégories", false);
   });
 
+// Subcategories
 db.collection("subcategories")
   .orderBy("order", "asc")
   .onSnapshot((snapshot) => {
@@ -918,6 +939,7 @@ db.collection("subcategories")
     setStatus("Erreur de connexion aux sous-catégories", false);
   });
 
+// Tasks
 db.collection("tasks")
   .orderBy("order", "asc")
   .onSnapshot((snapshot) => {
@@ -932,61 +954,69 @@ db.collection("tasks")
     setStatus("Erreur de connexion aux tâches", false);
   });
 
-// === FORMULAIRES ===
+// =========================
+//  Formulaires
+// =========================
+if (addTaskForm) {
+  addTaskForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!devMode) return;
 
-addTaskForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  if (!devMode) return;
+    const title = taskTitleInput.value.trim();
+    const description = taskDescInput.value.trim();
+    const badgeLabel = taskBadgeInput.value.trim() || null;
+    const columnId = taskColumnSelect.value;
+    const subId = taskSubSelect.value || null;
 
-  const title = taskTitleInput.value.trim();
-  const description = taskDescInput.value.trim();
-  const badgeLabel = taskBadgeInput.value.trim() || null;
-  const columnId = taskColumnSelect.value;
-  const subId = taskSubSelect.value || null;
+    if (!title || !columnId) return;
 
-  if (!title || !columnId) return;
+    try {
+      const existing = tasks
+        .filter(t => t.columnId === columnId && (t.subcategoryId || null) === (subId || null))
+        .sort((a,b) => (a.order || 0) - (b.order || 0));
+      const order = existing.length ? existing[existing.length-1].order + 1 : 0;
 
-  try {
-    const existing = tasks
-      .filter(t => t.columnId === columnId && (t.subcategoryId || null) === (subId || null))
-      .sort((a,b) => (a.order || 0) - (b.order || 0));
-    const order = existing.length ? existing[existing.length-1].order + 1 : 0;
+      await db.collection("tasks").add({
+        title,
+        description,
+        badgeLabel,
+        columnId,
+        subcategoryId: subId,
+        order,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      taskTitleInput.value = "";
+      taskDescInput.value = "";
+      taskBadgeInput.value = "";
+    } catch (err) {
+      console.error(err);
+      alert("Erreur lors de l'ajout de la tâche.");
+    }
+  });
+}
 
-    await db.collection("tasks").add({
-      title,
-      description,
-      badgeLabel,
-      columnId,
-      subcategoryId: subId,
-      order,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    taskTitleInput.value = "";
-    taskDescInput.value = "";
-    taskBadgeInput.value = "";
-  } catch (err) {
-    console.error(err);
-    alert("Erreur lors de l'ajout de la tâche.");
-  }
-});
+if (addColumnForm) {
+  addColumnForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!devMode) return;
 
-addColumnForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  if (!devMode) return;
+    const name = columnNameInput.value.trim();
+    if (!name) return;
 
-  const name = columnNameInput.value.trim();
-  if (!name) return;
+    try {
+      const order = columns.length ? Math.max(...columns.map(c => c.order || 0)) + 1 : 0;
+      await db.collection("columns").add({
+        name,
+        order,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      columnNameInput.value = "";
+    } catch (err) {
+      console.error(err);
+      alert("Erreur lors de l'ajout de la catégorie.");
+    }
+  });
+}
 
-  try {
-    const order = columns.length ? Math.max(...columns.map(c => c.order || 0)) + 1 : 0;
-    await db.collection("columns").add({
-      name,
-      order,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    columnNameInput.value = "";
-  } catch (err) {
-    console.error(err);
-    alert("Erreur lors de l'ajout de la catégorie.");
-  }
-});
+// Mode développeur désactivé par défaut
+setDevMode(false);
