@@ -1,7 +1,7 @@
 // Firebase
 const firebaseConfig={
   apiKey:"AIzaSyBsHFp5MfmldTvcDkatE4P9gXNRZ1Ivk0o",
-  authDomain:"YOUR_DOMAIN",
+  authDomain:"ems-dispatch-d1cd2.firebaseapp.com",
   projectId:"YOUR_PROJECT_ID"
 };
 firebase.initializeApp(firebaseConfig);
