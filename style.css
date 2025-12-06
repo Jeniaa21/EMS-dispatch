@@ -107,7 +107,6 @@ main {
   padding: 0.7rem;
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 210px);
   min-width: 260px;
   flex: 0 0 auto;
 }
