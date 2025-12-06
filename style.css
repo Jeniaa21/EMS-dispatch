@@ -110,7 +110,6 @@ main {
   max-height: calc(100vh - 210px);
   min-width: 260px;
   flex: 0 0 auto;
-  box-shadow: 0 6px 14px rgba(15,23,42,0.12);
 }
 
 .column-header {
@@ -182,10 +181,13 @@ main {
 }
 
 .column-body {
-  flex: 1;
-  overflow-y: auto;
+  /* ❌ supprime flex: 1 si tu l’as */
+  /* flex: 1; */
   padding: 0.25rem;
   border-radius: 0.7rem;
+  /* ❌ supprime le scroll interne */
+  /* overflow-y: auto; */
+  overflow: visible;
 }
 
 /* SUBCATEGORIES */
@@ -241,7 +243,9 @@ main {
   border-radius: 0.45rem;
   padding: 0.15rem;
   min-height: 24px;
-  transition: background 0.15s ease, outline 0.15s ease;
+  /* ❌ supprime ça si présent :
+     overflow-y: auto; */
+  overflow: visible;
 }
 
 .subcategory-body--hover {
