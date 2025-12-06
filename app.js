@@ -1,6 +1,6 @@
 // Firebase
 const firebaseConfig={
-  apiKey:"YOUR_API_KEY",
+  apiKey:"AIzaSyBsHFp5MfmldTvcDkatE4P9gXNRZ1Ivk0o",
   authDomain:"YOUR_DOMAIN",
   projectId:"YOUR_PROJECT_ID"
 };
