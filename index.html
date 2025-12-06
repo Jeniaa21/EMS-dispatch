@@ -1,33 +1,64 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>Kanban Firebase</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <title>Kanban Temps Réel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 <header>
-  <div class="left">
-    <h1>Kanban</h1>
+  <div class="header-left">
+    <h1>Dispatch SAMS</h1>
     <label class="dev-toggle">
-      <input type="checkbox" id="devToggle">
       <span>Mode développeur</span>
+      <input type="checkbox" id="devToggle" />
+      <span class="dev-toggle-slider"></span>
     </label>
   </div>
-  <div id="status">Connecté</div>
+  <div>
+    <div class="badge-live">
+      <span class="badge-live-dot"></span> Temps réel
+    </div>
+    <div id="statusText" class="status ok">Connecté</div>
+  </div>
 </header>
 
 <main>
-  <div id="controls" class="dev-only">
-    <button id="addColumn">+ Colonne</button>
-    <button id="addCard">+ Carte</button>
+  <div class="top-bar dev-only">
+    <form id="addTaskForm" class="form-inline">
+      <input type="text" id="taskTitle" placeholder="Titre" required />
+      <input type="text" id="taskDesc" placeholder="Description (optionnel)" />
+      <input type="text" id="taskBadge" placeholder="Badge (optionnel)" />
+      <select id="taskColumn"></select>
+      <select id="taskSubcategory"></select>
+      <button type="submit" class="btn">+ Carte</button>
+    </form>
+
+    <form id="addColumnForm" class="form-inline">
+      <input type="text" id="columnName" placeholder="Nouvelle catégorie" required />
+      <button type="submit" class="btn">+ Catégorie</button>
+    </form>
   </div>
-  <section id="board"></section>
+
+  <section id="board" class="board"></section>
 </main>
 
+<footer>
+  Héberge ce fichier sur GitHub Pages pour partager ton Kanban avec tout le monde.
+</footer>
+
+<!-- Menu de couleur flottant -->
+<div id="colorMenu" class="color-menu hidden">
+  <div id="colorMenuTitle" class="color-menu-title">Couleur</div>
+  <div id="colorMenuColors" class="color-menu-grid"></div>
+</div>
+
+<!-- Firebase (Compat) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<!-- Ton JS -->
 <script src="app.js"></script>
 </body>
 </html>
