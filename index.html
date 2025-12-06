@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Kanban Firebase</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="left">
+    <h1>Kanban</h1>
+    <label class="dev-toggle">
+      <input type="checkbox" id="devToggle">
+      <span>Mode développeur</span>
+    </label>
+  </div>
+  <div id="status">Connecté</div>
+</header>
+
+<main>
+  <div id="controls" class="dev-only">
+    <button id="addColumn">+ Colonne</button>
+    <button id="addCard">+ Carte</button>
+  </div>
+  <section id="board"></section>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
